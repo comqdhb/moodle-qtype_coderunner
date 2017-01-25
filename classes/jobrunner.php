@@ -83,19 +83,7 @@ class qtype_coderunner_jobrunner {
             'STUDENT' => new qtype_coderunner_student($USER)
          );
 
-         $outcome = null;
-  
-         
-         foreach ($this->testcases as $testcase) {
-           //apply Twig variables to the testcase
- 	   try {
-		$testcase->expected  =   $this->twig->render($testcase->expected,$this->templateparams);
-           } catch (Exception $e) {
-             $testcase->expected = $e->getMessage();
-            //needs something to deal with not being able to render correctly like...
-           }
-         }
-
+        $outcome = null;
         if ( $question->get_is_combinator() and $this->has_no_stdins()) {
             $outcome = $this->run_combinator();
         } 

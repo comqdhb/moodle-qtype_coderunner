@@ -37,6 +37,7 @@ $string['answer'] = 'Sample answer';
 $string['answerprompt'] = 'Answer:';
 $string['answer_help'] = 'A sample answer can be entered here and used for checking by the question author and optionally shown to students during review. It is also used by the bulk tester script. The correctness of a non-empty answer is checked when saving unless \'Validate on save\' is unchecked';
 $string['answerrequired'] = 'Please provide a non-empty answer';
+$string['usetwig_help'] = 'The sample snaswer and the tests can have Twig variables rendered into the text before they are submited to for marking.';
 $string['atleastonetest'] = 'You must provide at least one test case for this question.';
 $string['ace-language'] = 'Ace language';
 $string['advanced_customisation'] = 'Advanced customisation';
@@ -569,5 +570,7 @@ $string['useasexample'] = 'Use as example';
 $string['useace'] = 'Use ace';
 
 $string['validateonsave'] = 'Validate on save';
+
+$string['usetwig'] = 'Use Twig rendering';
 
 $string['xmlcoderunnerformaterror'] = 'XML format error in coderunner question';

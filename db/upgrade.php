@@ -172,6 +172,22 @@ function xmldb_qtype_coderunner_upgrade($oldversion) {
 
         // Coderunner savepoint reached.
         upgrade_plugin_savepoint(true, 2016123001, 'qtype', 'coderunner');
+    
+}
+
+    if ($oldversion < 2017012611) {
+
+        // Define field validateonsave to be added to question_coderunner_options.
+        $table = new xmldb_table('question_coderunner_options');
+        $field = new xmldb_field('usetwig', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', null);
+
+        // Conditionally launch add field validateonsave.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Coderunner savepoint reached.
+        upgrade_plugin_savepoint(true, 2017012611, 'qtype', 'coderunner');
     }
 
     require_once(__DIR__ . '/upgradelib.php');

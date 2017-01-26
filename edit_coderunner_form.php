@@ -127,9 +127,11 @@ class qtype_coderunner_edit_form extends question_edit_form {
         $mform->addElement('textarea', 'answer',
                 get_string('answer', 'qtype_coderunner'),
                 array('rows' => 9, 'class' => 'answer edit_code'));
+
         $mform->addElement('checkbox', 'validateonsave', null,
                 get_string('validateonsave', 'qtype_coderunner'));
         $mform->setDefault('validateonsave', false);
+
         $mform->addHelpButton('answer', 'answer', 'qtype_coderunner');
     }
 
@@ -645,6 +647,13 @@ class qtype_coderunner_edit_form extends question_edit_form {
             get_string('languages', 'qtype_coderunner'),
             $languages, null, false);
         $mform->addHelpButton('languages', 'languages', 'qtype_coderunner');
+
+
+$mform->addElement('checkbox', 'usetwig', null,
+                get_string('usetwig', 'qtype_coderunner'));
+        $mform->setDefault('usetwig', false);
+        $mform->addHelpButton('usetwig', 'usetwig', 'qtype_coderunner');
+
 
         $mform->disabledIf('typename', 'prototypetype', 'neq', '2');
         $mform->disabledIf('testsplitterre', 'iscombinatortemplate', 'eq', 0);

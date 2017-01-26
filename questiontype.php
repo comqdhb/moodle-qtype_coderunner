@@ -92,6 +92,7 @@ class qtype_coderunner extends question_type {
             'answerboxcolumns',
             'answerpreload',
             'useace',
+            'usetwig',
             'resultcolumns',
             'template',
             'iscombinatortemplate',
@@ -126,6 +127,7 @@ class qtype_coderunner extends question_type {
             'answerboxcolumns',
             'answerpreload',
             'useace',
+            'usetwig',
             'answer',
             'validateonsave',
             'templateparams'
@@ -613,6 +615,7 @@ class qtype_coderunner extends question_type {
             'validateonsave' => 0,
             'answerpreload' => '',
             'useace' => 1,
+            'usetwig' => 0,
             'iscombinatortemplate' => null,
             'template' => null
         );

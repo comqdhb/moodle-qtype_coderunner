@@ -127,11 +127,12 @@ class qtype_coderunner_edit_form extends question_edit_form {
         $mform->addElement('textarea', 'answer',
                 get_string('answer', 'qtype_coderunner'),
                 array('rows' => 9, 'class' => 'answer edit_code'));
-        $mform->addElement('advcheckbox', 'validateonsave', null,
-                get_string('validateonsave', 'qtype_coderunner'));
+        $mform->addElement('advcheckbox', 'validateonsave', null, get_string('validateonsave', 'qtype_coderunner'));
         $mform->setDefault('validateonsave', false);
 
         $mform->addHelpButton('answer', 'answer', 'qtype_coderunner');
+
+
     }
 
     /**
@@ -464,6 +465,11 @@ class qtype_coderunner_edit_form extends question_edit_form {
         $typeselectorcheckboxes[] = $mform->createElement('advcheckbox', 'showsource', null,
                 get_string('showsource', 'qtype_coderunner'));
         $mform->setDefault('showsource', false);
+
+        $typeselectorcheckboxes[] = $mform->createElement('advcheckbox', 'usetwig', null,
+                get_string('usetwig', 'qtype_coderunner'));
+        $mform->setDefault('usetwig', false);
+
         $mform->addElement('group', 'coderunner_type_checkboxes',
                 get_string('questioncheckboxes', 'qtype_coderunner'), $typeselectorcheckboxes, null, false);
         $mform->addHelpButton('coderunner_type_checkboxes', 'questioncheckboxes', 'qtype_coderunner');
@@ -647,10 +653,6 @@ class qtype_coderunner_edit_form extends question_edit_form {
         $mform->addHelpButton('languages', 'languages', 'qtype_coderunner');
 
 
-$mform->addElement('checkbox', 'usetwig', null,
-                get_string('usetwig', 'qtype_coderunner'));
-        $mform->setDefault('usetwig', false);
-        $mform->addHelpButton('usetwig', 'usetwig', 'qtype_coderunner');
 
 
         $mform->disabledIf('typename', 'prototypetype', 'neq', '2');

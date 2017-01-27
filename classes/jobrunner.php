@@ -36,6 +36,7 @@ class qtype_coderunner_jobrunner {
     private $testcases = null;       // The testcases (a subset of those in the question).
     private $allruns = null;         // Array of the source code for all runs.
     private $precheck = null;        // True if this is a precheck run.
+    private $usetwig = null;         // True is twig rendering should be applied to tests and answers.
 
     // Check the correctness of a student's code as an answer to the given
     // question and and a given set of test cases (which may be empty or a
@@ -73,28 +74,42 @@ class qtype_coderunner_jobrunner {
         $twigcore->setEscaper('matlab', 'qtype_coderunner_escapers::matlab');
 
         $this->allruns = array();
+
+
+        //first load up the template params
         $this->templateparams = array(
-            'STUDENT_ANSWER' => $code,
-            'ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::python(null, $code, null),
             'MATLAB_ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::matlab(null, $code, null),
             'IS_PRECHECK' => $isprecheck ? "1" : "0",
             'QUESTION' => $question,
             'STUDENT' => new qtype_coderunner_student($USER)
          );
 
-        $outcome = null;
 
-        if ($question->usetwig == 1){
-        foreach ($this->testcases as $testcase) {
-           //apply Twig variables to the testcase
- 	   try {
-		$testcase->expected  =   $this->twig->render($testcase->expected,$this->templateparams);
-           } catch (Exception $e) {
-             $testcase->expected = $e->getMessage();
-            //needs something to deal with not being able to render correctly like...
-           }
-         }
+        $outcome = null;
+        //do we use twig renedering on the question?
+        $usetwig = ($question->usetwig == 1);
+        if ($usetwig){
+         //apply the template params to the student code
+         try { $code     =   $this->twig->render($code,$this->templateparams);} catch (Exception $ee) {}
+         foreach ($this->testcases as $testcase) {
+            //apply Twig variables to the testcase
+  	   try {
+                 $testcase->testcode  =   $this->twig->render($testcase->testcode,$this->templateparams);
+                 $testcase->stdin     =   $this->twig->render($testcase->stdin,$this->templateparams);
+                 $testcase->expected  =   $this->twig->render($testcase->expected,$this->templateparams);
+ 	       	 $testcase->extra     =   $this->twig->render($testcase->extra,$this->templateparams);
+            } catch (Exception $e) {
+              $testcase->expected = $e->getMessage();
+             //needs something to deal with not being able to render correctly like...
+            }
         }
+        try { $this->question->answer     =   $this->twig->render($this->question->answer,$this->templateparams);
+            } catch (Exception $e) {  }  
+       }
+
+       //now add the student code to the templateparams
+       $this->templateparams['STUDENT_ANSWER']=$code;
+       $this->templateparams['ESCAPED_STUDENT_ANSWER'] = qtype_coderunner_escapers::python(null, $code, null);
 
 
         if ( $question->get_is_combinator() and $this->has_no_stdins()) {

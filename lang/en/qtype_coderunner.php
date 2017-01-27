@@ -342,7 +342,10 @@ checkbox and read the help available on the newly-visible form elements for
 more information.
 
 If the template-debugging checkbox is clicked, the program generated
-for each testcase will be displayed in the output.';
+for each testcase will be displayed in the output.
+
+If the \'Use Twig rendering\' is ticked, the text of questions and thier
+tests will have {{ <variable>}} substituded when the answer is checked.';
 $string['questionloaderror'] = 'Failed to load question';
 $string['questionpreview'] = 'Question preview';
 $string['questiontype'] = 'Question type';

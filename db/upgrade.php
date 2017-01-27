@@ -175,7 +175,7 @@ function xmldb_qtype_coderunner_upgrade($oldversion) {
     
 }
 
-    if ($oldversion < 2017012611) {
+    if ($oldversion < 2017012703) {
 
         // Define field validateonsave to be added to question_coderunner_options.
         $table = new xmldb_table('question_coderunner_options');
@@ -187,7 +187,7 @@ function xmldb_qtype_coderunner_upgrade($oldversion) {
         }
 
         // Coderunner savepoint reached.
-        upgrade_plugin_savepoint(true, 2017012611, 'qtype', 'coderunner');
+        upgrade_plugin_savepoint(true, 2017012703, 'qtype', 'coderunner');
     }
 
     require_once(__DIR__ . '/upgradelib.php');

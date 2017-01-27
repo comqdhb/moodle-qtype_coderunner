@@ -126,6 +126,7 @@ class qtype_coderunner_bulk_tester  {
                 $message = 'No sample answer.';
                 $status = self::MISSINGANSWER;
             } else {
+                $question->ismodelanswer = true;
                 $ok = $this->test_question($question);
                 if ($ok) {
                     $message = get_string('pass', 'qtype_coderunner');

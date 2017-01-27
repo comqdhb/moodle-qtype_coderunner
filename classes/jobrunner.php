@@ -90,7 +90,9 @@ class qtype_coderunner_jobrunner {
         $usetwig = ($question->usetwig == 1);
         if ($usetwig){
          //apply the template params to the student code
-         try { $code     =   $this->twig->render($code,$this->templateparams);} catch (Exception $ee) {}
+         if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
+           try { $code     =   $this->twig->render($code,$this->templateparams);} catch (Exception $ee) {}
+         }
          foreach ($this->testcases as $testcase) {
             //apply Twig variables to the testcase
   	   try {
@@ -103,8 +105,10 @@ class qtype_coderunner_jobrunner {
              //needs something to deal with not being able to render correctly like...
             }
         }
+        //if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
         try { $this->question->answer     =   $this->twig->render($this->question->answer,$this->templateparams);
             } catch (Exception $e) {  }  
+        //}
        }
 
        //now add the student code to the templateparams

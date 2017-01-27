@@ -764,6 +764,7 @@ class qtype_coderunner_edit_form extends question_edit_form {
             $question->$key = $value;
         }
         $question->isnew = true;
+        $question->ismodelanswer = true;
 
         // Clean the question object, get inherited fields and run the sample answer.
         $qtype = new qtype_coderunner();

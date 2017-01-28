@@ -114,9 +114,42 @@ class qtype_coderunner_question extends question_graded_automatically {
 
 
     public function get_correct_answer() {
+        global $USER;
         // Return the sample answer, if supplied.
-        return isset($this->answer) ? array('answer' => $this->answer) : array();
+        return isset($this->answer) ? array('answer' => $this->render_using_twig($this->answer)) : array();
     }
+
+   public function render_using_twig($some_text){
+     global $USER;
+     $result=$some_text;
+     if (isset($this->usetwig) && $this->usetwig == 1)
+        {
+          if (!isset($this->twig)){
+          Twig_Autoloader::register();
+          $loader = new Twig_Loader_String();
+          $this->twig = new Twig_Environment($loader, array(
+            'debug' => true,
+            'autoescape' => false,
+            'optimizations' => 0
+            ));
+           }
+
+          $templateparams = array(
+            'IS_PRECHECK' =>  "0",
+            'QUESTION' => $this,
+            'STUDENT' => new qtype_coderunner_student($USER)
+            );
+          $result = $this->twig->render($result, $templateparams);
+        }
+      return $result;
+     }
+
+
+
+
+
+
+
 
     // Grade the given 'response'.
     // This implementation assumes a modified behaviour that will accept a

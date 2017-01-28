@@ -69,12 +69,12 @@ class qtype_coderunner_renderer extends qtype_renderer {
             'autoescape' => false,
             'optimizations' => 0
             ));
-
+          $code =  $qa->get_last_qt_var('answer');
           $this->templateparams = array(
             'STUDENT_ANSWER' => $code,
             'ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::python(null, $code, null),
             'MATLAB_ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::matlab(null, $code, null),
-            'IS_PRECHECK' => $isprecheck ? "1" : "0",
+            'IS_PRECHECK' =>  "0",
             'QUESTION' => $question,
             'STUDENT' => new qtype_coderunner_student($USER)
             );
@@ -465,7 +465,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $row = array();
             $rowclasses[$i] = $i % 2 == 0 ? 'r0' : 'r1';
 
-            if ($this-usetwig==1){
+            if ($this->usetwig==1){
               $example->testcode = $this->twig->render($example->testcode, $this->templateparams);
               $example->stdin = $this->twig->render($example->stdin, $this->templateparams);
               $example->expected = $this->twig->render($example->expected, $this->templateparams);

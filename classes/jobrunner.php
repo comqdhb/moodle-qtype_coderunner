@@ -22,7 +22,6 @@
 
 
 defined('MOODLE_INTERNAL') || die();
-require_once($CFG->dirroot . '/question/type/coderunner/Twig/Autoloader.php');
 require_once($CFG->dirroot . '/question/type/coderunner/questiontype.php');
 
 // The qtype_coderunner_jobrunner class contains all code concerned with running a question
@@ -91,24 +90,22 @@ class qtype_coderunner_jobrunner {
         if ($usetwig){
          //apply the template params to the student code
          if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
-           try { $code     =   $this->twig->render($code,$this->templateparams);} catch (Exception $ee) {}
+           try { $code     =   $question->render_using_twig_with_params($code,$this->templateparams);} catch (Exception $ee) {}
          }
          foreach ($this->testcases as $testcase) {
             //apply Twig variables to the testcase
   	   try {
-                 $testcase->testcode  =   $this->twig->render($testcase->testcode,$this->templateparams);
-                 $testcase->stdin     =   $this->twig->render($testcase->stdin,$this->templateparams);
-                 $testcase->expected  =   $this->twig->render($testcase->expected,$this->templateparams);
- 	       	 $testcase->extra     =   $this->twig->render($testcase->extra,$this->templateparams);
+                 $testcase->testcode  =   $question->render_using_twig_with_params($testcase->testcode,$this->templateparams);
+                 $testcase->stdin     =   $question->render_using_twig_with_params($testcase->stdin,$this->templateparams);
+                 $testcase->expected  =   $question->render_using_twig_with_params($testcase->expected,$this->templateparams);
+ 	       	 $testcase->extra     =   $question->render_using_twig_with_params($testcase->extra,$this->templateparams);
             } catch (Exception $e) {
               $testcase->expected = $e->getMessage();
              //needs something to deal with not being able to render correctly like...
             }
         }
-        //if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
-        try { $this->question->answer     =   $this->twig->render($this->question->answer,$this->templateparams);
+        try { $this->question->answer     =   $question->render_using_twig_with_params($this->question->answer,$this->templateparams);
             } catch (Exception $e) {  }  
-        //}
        }
 
        //now add the student code to the templateparams
@@ -152,7 +149,7 @@ class qtype_coderunner_jobrunner {
         $maxmark = $this->maximum_possible_mark();
         $outcome = new qtype_coderunner_testing_outcome($maxmark, $numtests);
         try {
-            $testprog = $this->twig->render($this->template, $this->templateparams);
+            $testprog = $this->question->render_using_twig_with_params_forced($this->template, $this->templateparams);
         } catch (Exception $e) {
             $outcome->set_status(
                     qtype_coderunner_testing_outcome::STATUS_SYNTAX_ERROR,
@@ -212,7 +209,7 @@ class qtype_coderunner_jobrunner {
                 $this->templateparams['TEST'] = $testcase;
             }
             try {
-                $testprog = $this->twig->render($this->template, $this->templateparams);
+                $testprog = $question->render_using_twig_with_params($this->template, $this->templateparams);
             } catch (Exception $e) {
                 $outcome->set_status(
                         qtype_coderunner_testing_outcome::STATUS_SYNTAX_ERROR,

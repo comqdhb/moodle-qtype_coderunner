@@ -47,6 +47,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/question/engine/bank.php');
 require_once($CFG->dirroot . '/lib/questionlib.php');
+require_once($CFG->dirroot . '/question/type/coderunner/Twig/Autoloader.php');
 
 /**
  * qtype_coderunner extends the base question_type to coderunner-specific functionality.

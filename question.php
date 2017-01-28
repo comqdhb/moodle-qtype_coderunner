@@ -30,9 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/question/behaviour/adaptive/behaviour.php');
 require_once($CFG->dirroot . '/question/engine/questionattemptstep.php');
 require_once($CFG->dirroot . '/question/behaviour/adaptive_adapted_for_coderunner/behaviour.php');
-require_once($CFG->dirroot . '/question/type/coderunner/Twig/Autoloader.php');
 require_once($CFG->dirroot . '/question/type/coderunner/questiontype.php');
-
 
 use qtype_coderunner\constants;
 
@@ -119,12 +117,10 @@ class qtype_coderunner_question extends question_graded_automatically {
         return isset($this->answer) ? array('answer' => $this->render_using_twig($this->answer)) : array();
     }
 
-   public function render_using_twig($some_text){
-     global $USER;
-     $result=$some_text;
-     if (isset($this->usetwig) && $this->usetwig == 1)
-        {
-          if (!isset($this->twig)){
+
+private function load_twig(){
+global $USER;
+if (!isset($this->twig)){
           Twig_Autoloader::register();
           $loader = new Twig_Loader_String();
           $this->twig = new Twig_Environment($loader, array(
@@ -132,24 +128,50 @@ class qtype_coderunner_question extends question_graded_automatically {
             'autoescape' => false,
             'optimizations' => 0
             ));
+          $twigcore = $this->twig->getExtension('core');
+        $twigcore->setEscaper('py', 'qtype_coderunner_escapers::python');
+        $twigcore->setEscaper('python', 'qtype_coderunner_escapers::python');
+        $twigcore->setEscaper('c',  'qtype_coderunner_escapers::java');
+        $twigcore->setEscaper('java', 'qtype_coderunner_escapers::java');
+        $twigcore->setEscaper('ml', 'qtype_coderunner_escapers::matlab');
+        $twigcore->setEscaper('matlab', 'qtype_coderunner_escapers::matlab');
            }
+}
 
+
+public function render_using_twig_with_params_forced($some_text,$params){
+          $this->load_twig();
+          return  $this->twig->render($some_text, $params);
+
+}
+
+public function render_using_twig_with_params($some_text,$params){
+
+$result=$some_text;
+$this->load_twig();
+if (isset($this->usetwig) && $this->usetwig == 1)
+        {
+          $result = $this->render_using_twig_with_params_forced($result, $params);
+        }
+return $result;
+
+}
+
+
+public function render_using_twig($some_text){
+     global $USER;
+     $result=$some_text;
+     if (isset($this->usetwig) && $this->usetwig == 1)
+        {
           $templateparams = array(
             'IS_PRECHECK' =>  ($this->precheck?"1":"0"),
             'QUESTION' => $this,
             'STUDENT' => new qtype_coderunner_student($USER)
             );
-          $result = $this->twig->render($result, $templateparams);
+          $result = $this->render_using_twig_with_params($result, $templateparams);
         }
       return $result;
      }
-
-
-
-
-
-
-
 
     // Grade the given 'response'.
     // This implementation assumes a modified behaviour that will accept a

@@ -23,7 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
-require_once($CFG->dirroot . '/question/type/coderunner/Twig/Autoloader.php');
 require_once($CFG->dirroot . '/question/type/coderunner/questiontype.php');
 
 use qtype_coderunner\constants;
@@ -55,20 +54,14 @@ class qtype_coderunner_renderer extends qtype_renderer {
         global $CFG, $PAGE, $USER;
 
 
-        $question = $qa->get_question();
 
+        $question = $qa->get_question();
+        $this->question=$question;
         $this->usetwig = $question->usetwig;
 
 
         //nb bad code will not check for usetwig and will therefore fail if the render is called
         if ($this->usetwig==1){
-          Twig_Autoloader::register();
-          $loader = new Twig_Loader_String();
-          $this->twig = new Twig_Environment($loader, array(
-            'debug' => true,
-            'autoescape' => false,
-            'optimizations' => 0
-            ));
           $code =  $qa->get_last_qt_var('answer');
           $this->templateparams = array(
             'STUDENT_ANSWER' => $code,
@@ -78,7 +71,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
             'QUESTION' => $question,
             'STUDENT' => new qtype_coderunner_student($USER)
             );
-          $question->questiontext = $this->twig->render($question->questiontext, $this->templateparams);   
+          $question->questiontext = $question->render_using_twig_with_params($question->questiontext, $this->templateparams);   
         }
 
 
@@ -429,9 +422,9 @@ class qtype_coderunner_renderer extends qtype_renderer {
         $text = '';
         foreach ($examples as $example) {
             if ($this-usetwig==1){
-              $example->testcode = $this->twig->render($example->testcode, $this->templateparams);
-              $example->stdin = $this->twig->render($example->stdin, $this->templateparams);
-              $example->expected = $this->twig->render($example->expected, $this->templateparams);
+              $example->testcode = $question->twig_render($example->testcode, $this->templateparams);
+              $example->stdin = $question->twig_render($example->stdin, $this->templateparams);
+              $example->expected = $question->twig_render($example->expected, $this->templateparams);
             }
             $text .= $example->testcode . ' &rarr; ' . $example->expected;
             $text .= html_writer::empty_tag('br');
@@ -465,9 +458,9 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $rowclasses[$i] = $i % 2 == 0 ? 'r0' : 'r1';
 
             if ($this->usetwig==1){
-              $example->testcode = $this->twig->render($example->testcode, $this->templateparams);
-              $example->stdin = $this->twig->render($example->stdin, $this->templateparams);
-              $example->expected = $this->twig->render($example->expected, $this->templateparams);
+              $example->testcode = $this->question->render_using_twig_with_params($example->testcode, $this->templateparams);
+              $example->stdin = $this->question->render_using_twig_with_params($example->stdin, $this->templateparams);
+              $example->expected = $this->question->render_using_twig_with_params($example->expected, $this->templateparams);
             }
 
 

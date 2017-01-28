@@ -135,7 +135,7 @@ class qtype_coderunner_question extends question_graded_automatically {
            }
 
           $templateparams = array(
-            'IS_PRECHECK' =>  "0",
+            'IS_PRECHECK' =>  ($this->precheck?"1":"0"),
             'QUESTION' => $this,
             'STUDENT' => new qtype_coderunner_student($USER)
             );

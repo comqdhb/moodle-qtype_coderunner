@@ -74,7 +74,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
             'STUDENT_ANSWER' => $code,
             'ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::python(null, $code, null),
             'MATLAB_ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::matlab(null, $code, null),
-            'IS_PRECHECK' =>  "0",
+            'IS_PRECHECK' => ($question->precheck?"1": "0"),
             'QUESTION' => $question,
             'STUDENT' => new qtype_coderunner_student($USER)
             );
@@ -90,7 +90,6 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $qtext .= $this->format_examples($examples);
             $qtext .= html_writer::end_tag('div');
         }
-
         $qtext .= html_writer::start_tag('div', array('class' => 'prompt'));
 
         if (empty($question->penaltyregime)) {

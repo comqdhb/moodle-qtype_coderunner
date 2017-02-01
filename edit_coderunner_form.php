@@ -647,6 +647,7 @@ class qtype_coderunner_edit_form extends question_edit_form {
             get_string('ace-language', 'qtype_coderunner'),
             array('size' => 10));
         $mform->setType('acelang', PARAM_RAW);
+
         $mform->addElement('group', 'languages',
             get_string('languages', 'qtype_coderunner'),
             $languages, null, false);
@@ -654,6 +655,21 @@ class qtype_coderunner_edit_form extends question_edit_form {
 
 
 
+$mform->addElement('textarea', 'scenariogenerator',
+                get_string('scenariogenerator', 'qtype_coderunner'),
+                array('rows' => 9, 'class' => 'scenariogenerator edit_code'));
+
+$mform->addHelpButton('scenariogenerator', 'scenarios', 'qtype_coderunner');
+
+
+$scenarios = array();
+        $scenarios[]  = $mform->createElement('text', 'scenariotype',
+            get_string('scenariotype', 'qtype_coderunner'),
+            array('size' => 10));
+        $mform->setType('scenariotype', PARAM_RAW);
+        $mform->addElement('group', 'scenarios',
+            get_string('scenarios', 'qtype_coderunner'),
+            $scenarios, null, false);
 
         $mform->disabledIf('typename', 'prototypetype', 'neq', '2');
         $mform->disabledIf('testsplitterre', 'iscombinatortemplate', 'eq', 0);

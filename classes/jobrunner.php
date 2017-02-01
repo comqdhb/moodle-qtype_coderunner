@@ -209,7 +209,7 @@ class qtype_coderunner_jobrunner {
                 $this->templateparams['TEST'] = $testcase;
             }
             try {
-                $testprog = $question->render_using_twig_with_params_forced($this->template, $this->templateparams);
+                $testprog = $this->question->render_using_twig_with_params_forced($this->template, $this->templateparams);
             } catch (Exception $e) {
                 $outcome->set_status(
                         qtype_coderunner_testing_outcome::STATUS_SYNTAX_ERROR,

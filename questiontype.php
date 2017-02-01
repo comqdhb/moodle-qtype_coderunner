@@ -107,7 +107,9 @@ class qtype_coderunner extends question_type {
             'cputimelimitsecs',
             'memlimitmb',
             'sandboxparams',
-            'templateparams'
+            'templateparams',
+            'scenariogenerator',
+            'scenariotype'
         );
     }
 
@@ -131,7 +133,9 @@ class qtype_coderunner extends question_type {
             'usetwig',
             'answer',
             'validateonsave',
-            'templateparams'
+            'templateparams',
+            'scenariogenerator',
+            'scenariotype'
             );
     }
 

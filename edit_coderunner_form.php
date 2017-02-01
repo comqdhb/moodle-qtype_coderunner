@@ -784,7 +784,7 @@ $scenarios = array();
 
         // Clean the question object, get inherited fields and run the sample answer.
         $qtype = new qtype_coderunner();
-        $qtype->clean_question_form($question);
+        $qtype->clean_question_form($question, true);
         $questiontype = $question->coderunnertype;
         list($category) = explode(',', $question->category);
         $contextid = $DB->get_field('question_categories', 'contextid', array('id' => $category));

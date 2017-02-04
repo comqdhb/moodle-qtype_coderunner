@@ -75,6 +75,8 @@ class qtype_coderunner_jobrunner {
         $this->allruns = array();
 
 
+
+
         //first load up the template params
         $this->templateparams = array(
             'MATLAB_ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::matlab(null, $code, null),
@@ -82,7 +84,11 @@ class qtype_coderunner_jobrunner {
             'QUESTION' => $question,
             'STUDENT' => new qtype_coderunner_student($USER)
          );
-
+         if (isset($question->scenario)){
+           $this->templateparams['SCENARIO']=$question->scenario->data;
+         } else {
+           $this->templateparams['SCENARIO']=new stdClass();
+         }
 
         $outcome = null;
         //do we use twig renedering on the question?

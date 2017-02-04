@@ -781,6 +781,7 @@ $scenarios = array();
         }
         $question->isnew = true;
         $question->ismodelanswer = true;
+        $question->initScenario("");
 
         // Clean the question object, get inherited fields and run the sample answer.
         $qtype = new qtype_coderunner();

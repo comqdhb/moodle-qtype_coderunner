@@ -69,7 +69,8 @@ class qtype_coderunner_renderer extends qtype_renderer {
             'MATLAB_ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::matlab(null, $code, null),
             'IS_PRECHECK' => ($question->precheck?"1": "0"),
             'QUESTION' => $question,
-            'STUDENT' => new qtype_coderunner_student($USER)
+            'STUDENT' => new qtype_coderunner_student($USER),
+            'SCENARIO' => $question->scenario->data
             );
           $question->questiontext = $question->render_using_twig_with_params($question->questiontext, $this->templateparams);   
         }

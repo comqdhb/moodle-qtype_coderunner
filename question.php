@@ -78,6 +78,66 @@ class qtype_coderunner_question extends question_graded_automatically {
         return $this->is_gradable_response($response);
     }
 
+/**
+     * INHERITED FROM questionbase.php
+     * Start a new attempt at this question, storing any information that will
+     * be needed later in the step.
+     *
+     * This is where the question can do any initialisation required on a
+     * per-attempt basis. For example, this is where the multiple choice
+     * question type randomly shuffles the choices (if that option is set).
+     *
+     * Any information about how the question has been set up for this attempt
+     * should be stored in the $step, by calling $step->set_qt_var(...).
+     *
+     * @param question_attempt_step The first step of the {@link question_attempt}
+     *      being started. Can be used to store state.
+     * @param int $varant which variant of this question to start. Will be between
+     *      1 and {@link get_num_variants()} inclusive.
+     */
+    public function start_attempt(question_attempt_step $step, $variant) {
+           parent::start_attempt($step,$variant);
+           $this->initScenario("");     
+           $step->set_qt_var("_crs", $this->scenario->get_json_encoded());
+    }
+    
+    public function initScenario($json){
+        
+        $js=$json;
+
+        $sj="{\"data\":{\"a\":\"b\"},\"provides\":[],\"requires\":[],\"err_message\":null}";
+        $code='echo \'{{ SCENARIO.json }}\'  | sed "s/\"data\":{/\"data\":{\"now\":\"$(date)\",/g"';
+        $lang='sh';
+
+        $code=$this->scenariogenerator;
+        $lang=$this->scenariotype;
+
+        $sp=new qtype_coderunner_scenariopopulator($code,$lang);
+
+        $original_scenario=new qtype_coderunner_scenario($sj);
+        $this->scenario=$sp->get_updated_scenario($original_scenario);
+    }
+
+    /**
+     * INHERITED FROM questionbase.php
+     * When an in-progress {@link question_attempt} is re-loaded from the
+     * database, this method is called so that the question can re-initialise
+     * its internal state as needed by this attempt.
+     *
+     * For example, the multiple choice question type needs to set the order
+     * of the choices to the order that was set up when start_attempt was called
+     * originally. All the information required to do this should be in the
+     * $step object, which is the first step of the question_attempt being loaded.
+     *
+     * @param question_attempt_step The first step of the {@link question_attempt}
+     *      being loaded.
+     */
+    public function apply_attempt_state(question_attempt_step $step) {
+        parent::apply_attempt_state($step);
+        $sj=$step->get_qt_var("_crs");
+        $this->scenario=new qtype_coderunner_scenario($sj);
+    }
+
 
     /**
      * In situations where is_gradable_response() returns false, this method
@@ -166,7 +226,8 @@ public function render_using_twig($some_text){
           $templateparams = array(
             'IS_PRECHECK' =>  ($this->precheck?"1":"0"),
             'QUESTION' => $this,
-            'STUDENT' => new qtype_coderunner_student($USER)
+            'STUDENT' => new qtype_coderunner_student($USER),
+            'SCENARIO' => $this->scenario->data
             );
           $result = $this->render_using_twig_with_params($result, $templateparams);
         }

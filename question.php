@@ -125,6 +125,7 @@ class qtype_coderunner_question extends question_graded_automatically {
         $s->json=$original_scenario->get_json_encoded();
 
         $cmd = $this->render_using_twig_with_params_forced($code,array('SCENARIO' => $s));        
+        //NB php_task.php in jobe needs modifying to have more memory and not enforce --no-php.ini
         $jobe_answer = $this->jobe->execute($cmd, $lang, '');
         $this->scenario = new qtype_coderunner_scenario((isset($jobe_answer->output)?$jobe_answer->output:''));
     }

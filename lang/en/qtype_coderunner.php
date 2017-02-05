@@ -581,7 +581,7 @@ $string['usetwig'] = 'Use Twig rendering';
 
 $string['xmlcoderunnerformaterror'] = 'XML format error in coderunner question';
 
-$string['scenariotype'] = "The type of scenario generater language";
+$string['scenariotype'] = "The scenario generater language";
 $string['scenariogenerator'] = "A scenario generator";
 $string['scenarios'] = "Scenario generator";
-$string['scenarios_help'] = "The code to ammend the scenario with additional variables.  Choose a programming language type to match the generator code";
+$string['scenarios_help'] = "The code to ammend the scenario with additional variables.  Choose a programming language to match the generator code";

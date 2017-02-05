@@ -41,6 +41,7 @@ class qtype_coderunner_question extends question_graded_automatically {
 
     public $testcases; // Array of testcases.
 
+
     /**
      * Override default behaviour so that we can use a specialised behaviour
      * that caches test results returned by the call to grade_response().
@@ -98,11 +99,13 @@ class qtype_coderunner_question extends question_graded_automatically {
     public function start_attempt(question_attempt_step $step, $variant) {
            parent::start_attempt($step,$variant);
            $this->initScenario("");     
-           $step->set_qt_var("_crs", $this->scenario->get_json_encoded());
+           if(isset($this->scenario) && count($this->scenario->data)>0 ) {
+             $step->set_qt_var("_crs", $this->scenario->get_json_encoded());
+           }
     }
     
     public function initScenario($json){
-        
+        global $USER;   
         $js=$json;
 
         $sj="{\"data\":{\"a\":\"b\"},\"provides\":[],\"requires\":[],\"err_message\":null}";
@@ -112,10 +115,18 @@ class qtype_coderunner_question extends question_graded_automatically {
         $code=$this->scenariogenerator;
         $lang=$this->scenariotype;
 
-        $sp=new qtype_coderunner_scenariopopulator($code,$lang);
 
+        if (!isset($this->jobe)) {
+            $this->jobe = new qtype_coderunner_jobesandbox();
+        }
         $original_scenario=new qtype_coderunner_scenario($sj);
-        $this->scenario=$sp->get_updated_scenario($original_scenario);
+        $original_scenario->STUDENT=new qtype_coderunner_student($USER);
+        $s = new stdClass();
+        $s->json=$original_scenario->get_json_encoded();
+
+        $cmd = $this->render_using_twig_with_params_forced($code,array('SCENARIO' => $s));        
+        $jobe_answer = $this->jobe->execute($cmd, $lang, '');
+        $this->scenario = new qtype_coderunner_scenario((isset($jobe_answer->output)?$jobe_answer->output:''));
     }
 
     /**
@@ -135,7 +146,9 @@ class qtype_coderunner_question extends question_graded_automatically {
     public function apply_attempt_state(question_attempt_step $step) {
         parent::apply_attempt_state($step);
         $sj=$step->get_qt_var("_crs");
-        $this->scenario=new qtype_coderunner_scenario($sj);
+        if (!is_null($sj)){
+          $this->scenario=new qtype_coderunner_scenario($sj);
+        }
     }
 
 

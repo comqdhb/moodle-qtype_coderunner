@@ -115,19 +115,24 @@ class qtype_coderunner_question extends question_graded_automatically {
         $code=$this->scenariogenerator;
         $lang=$this->scenariotype;
 
+        //NB only call jobe if code and lang exist
+        if (isset($code) && isset($lang) && $code !== '' && $lang !== ''){
 
-        if (!isset($this->jobe)) {
-            $this->jobe = new qtype_coderunner_jobesandbox();
+         if (!isset($this->jobe)) {
+             $this->jobe = new qtype_coderunner_jobesandbox();
+         }
+         $original_scenario=new qtype_coderunner_scenario($sj);
+         $original_scenario->STUDENT=new qtype_coderunner_student($USER);
+         $s = new stdClass();
+         $s->json=$original_scenario->get_json_encoded();
+ 
+         $cmd = $this->render_using_twig_with_params_forced($code,array('SCENARIO' => $s));        
+         //NB php_task.php in jobe needs modifying to have more memory and not enforce --no-php.ini
+         $jobe_answer = $this->jobe->execute($cmd, $lang, '');
+         $this->scenario = new qtype_coderunner_scenario((isset($jobe_answer->output)?$jobe_answer->output:''));
+        } else {
+          $this-scenario = new qtype_coderunner_scenario('');
         }
-        $original_scenario=new qtype_coderunner_scenario($sj);
-        $original_scenario->STUDENT=new qtype_coderunner_student($USER);
-        $s = new stdClass();
-        $s->json=$original_scenario->get_json_encoded();
-
-        $cmd = $this->render_using_twig_with_params_forced($code,array('SCENARIO' => $s));        
-        //NB php_task.php in jobe needs modifying to have more memory and not enforce --no-php.ini
-        $jobe_answer = $this->jobe->execute($cmd, $lang, '');
-        $this->scenario = new qtype_coderunner_scenario((isset($jobe_answer->output)?$jobe_answer->output:''));
     }
 
     /**

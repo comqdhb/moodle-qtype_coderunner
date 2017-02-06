@@ -131,7 +131,7 @@ class qtype_coderunner_question extends question_graded_automatically {
          $jobe_answer = $this->jobe->execute($cmd, $lang, '');
          $this->scenario = new qtype_coderunner_scenario((isset($jobe_answer->output)?$jobe_answer->output:''));
         } else {
-          $this-scenario = new qtype_coderunner_scenario('');
+          $this->scenario = new qtype_coderunner_scenario('');
         }
     }
 

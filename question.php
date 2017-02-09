@@ -41,7 +41,10 @@ class qtype_coderunner_question extends question_graded_automatically {
 
     public $testcases; // Array of testcases.
 
-
+    public $twigset;// =  new SplObjectStorage();
+    public $requires_scenario;
+    public $requires_student;
+    public $student;
     /**
      * Override default behaviour so that we can use a specialised behaviour
      * that caches test results returned by the call to grade_response().
@@ -97,16 +100,27 @@ class qtype_coderunner_question extends question_graded_automatically {
      *      1 and {@link get_num_variants()} inclusive.
      */
     public function start_attempt(question_attempt_step $step, $variant) {
+           global $USER;
+           $this->student = new qtype_coderunner_student($USER);
            parent::start_attempt($step,$variant);
+           $this->twigset =    array();
+           $this->capture_twig_variables();
+           $this->logit($this->twigset);
            $this->initScenario("");     
-           if(isset($this->scenario) && count($this->scenario->data)>0 ) {
+           if($this->requires_scenario && isset($this->scenario) && count($this->scenario->data)>0 ) {
              $step->set_qt_var("_crs", $this->scenario->get_json_encoded());
            }
+           if($this->requires_student  ) {
+             $step->set_qt_var("_student", json_encode( $this->student ));
+           }
+           $this->logit($this);
     }
     
     public function initScenario($json){
-        global $USER;   
         $js=$json;
+
+	//need to iterate testecases,template and question text for twig variables
+
 
         $sj="{\"data\":{\"a\":\"b\"},\"provides\":[],\"requires\":[],\"err_message\":null}";
         $code='echo \'{{ SCENARIO.json }}\'  | sed "s/\"data\":{/\"data\":{\"now\":\"$(date)\",/g"';
@@ -122,7 +136,7 @@ class qtype_coderunner_question extends question_graded_automatically {
              $this->jobe = new qtype_coderunner_jobesandbox();
          }
          $original_scenario=new qtype_coderunner_scenario($sj);
-         $original_scenario->STUDENT=new qtype_coderunner_student($USER);
+         $original_scenario->STUDENT=$this->student;
          $s = new stdClass();
          $s->json=$original_scenario->get_json_encoded();
  
@@ -154,6 +168,10 @@ class qtype_coderunner_question extends question_graded_automatically {
         $sj=$step->get_qt_var("_crs");
         if (!is_null($sj)){
           $this->scenario=new qtype_coderunner_scenario($sj);
+        }
+        $sj=$step->get_qt_var("_student");
+        if (!is_null($sj)){// overwrite the one we already have
+          $this->student=json_decode($sj);
         }
     }
 
@@ -221,7 +239,87 @@ if (!isset($this->twig)){
 public function render_using_twig_with_params_forced($some_text,$params){
           $this->load_twig();
           return  $this->twig->render($some_text, $params);
+}
 
+
+public function build_twig_set($template){
+    preg_match_all('/\{\%\s*([^\%\}]*)\s*\%\}|\{\{\s*([^\}\}]*)\s*\}\}/i', $template, $matches);
+    foreach($matches[2] as $v){
+       $this->twigset[trim($v)]=null;
+    }
+}
+
+
+public function capture_twig_variables(){
+ $usetwig = ($this->usetwig == 1);
+        if ($usetwig){
+         //apply the template params to the student code
+         if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
+           try { $code     =   $question->render_using_twig_with_params($code,$this->templateparams);} catch (Exception $ee) {}
+         }
+         foreach ($this->testcases as $testcase) {
+            //capture Twig variables for the testcase
+                 $this->build_twig_set($testcase->testcode);
+                 $this->build_twig_set($testcase->stdin);
+                 $this->build_twig_set($testcase->expected);
+                 $this->build_twig_set($testcase->extra);
+            }
+        }
+       $this->build_twig_set($this->answer);
+       $this->build_twig_set($this->answerpreload);
+       $this->build_twig_set($this->template);
+       $this->build_twig_set($this->scenariogenerator);
+       $this->build_twig_set($this->combinatortemplate);
+       $this->build_twig_set($this->pertesttemplate);
+       $this->build_twig_set($this->questiontext);
+       /*
+  'STUDENT.username' => NULL,
+  'SCENARIO.now' => NULL,
+  'SCENARIO.a' => NULL,
+  'SCENARIO.mon' => NULL,
+  'QUESTION.id' => NULL,
+  'THIS' => NULL,
+  'STUDENT_ANSWER' => NULL,
+  'QUESTION.usetwig' => NULL,
+  '' => NULL,
+  'testCase.testcode' => NULL,
+  'SCENARIO.json | e(\'c\')' => NULL,
+*/
+  $rm = array();
+  $this->requires_scenario=false;
+  $this->requires_student=false;
+  foreach($this->twigset as $key => $val){
+    $query="STUDENT.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $this->requires_student=true;
+    }
+    $query="SCENARIO.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $this->requires_scenario=true;
+    }
+    $query="QUESTION.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    $query="testCase.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    $query="THIS";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    $query="STUDENT_ANSWER";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    if ($key === '') { $rm[$key]=$val;}
+    $query="SCENARIO.json";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+  }
+       $this->twigset= array_diff_key($this->twigset, $rm);
 }
 
 public function render_using_twig_with_params($some_text,$params){
@@ -245,7 +343,7 @@ public function render_using_twig($some_text){
           $templateparams = array(
             'IS_PRECHECK' =>  ($this->precheck?"1":"0"),
             'QUESTION' => $this,
-            'STUDENT' => new qtype_coderunner_student($USER),
+            'STUDENT' => $this->student,
             'SCENARIO' => $this->scenario->data
             );
           $result = $this->render_using_twig_with_params($result, $templateparams);
@@ -484,5 +582,12 @@ public function render_using_twig($some_text){
             }
         }
         return $filemap;
+    }
+
+
+    public function logit($var){
+	$x=var_export($var,true);
+        $x = $x . "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n";
+//        file_put_contents("/var/www/moodledata/aa.log", $x, FILE_APPEND | LOCK_EX);
     }
 }

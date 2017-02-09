@@ -586,8 +586,8 @@ public function render_using_twig($some_text){
 
 
     public function logit($var){
-	$x=var_export($var,true);
-        $x = $x . "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n";
+//	$x=var_export($var,true);
+//        $x = $x . "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n";
 //        file_put_contents("/var/www/moodledata/aa.log", $x, FILE_APPEND | LOCK_EX);
     }
 }

@@ -274,8 +274,8 @@ public function capture_twig_variables(){
        $this->build_twig_set($this->answerpreload);
        $this->build_twig_set($this->template);
        $this->build_twig_set($this->scenariogenerator);
-       $this->build_twig_set($this->combinatortemplate);
-       $this->build_twig_set($this->pertesttemplate);
+       if (isset($this->combinatortemplate)) {$this->build_twig_set($this->combinatortemplate);}
+       if (isset($this->pertesttemplate)) {$this->build_twig_set($this->pertesttemplate);}
        $this->build_twig_set($this->questiontext);
        /*
   'STUDENT.username' => NULL,

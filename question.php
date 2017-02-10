@@ -164,14 +164,19 @@ class qtype_coderunner_question extends question_graded_automatically {
      *      being loaded.
      */
     public function apply_attempt_state(question_attempt_step $step) {
+        global $USER;
         parent::apply_attempt_state($step);
         $sj=$step->get_qt_var("_crs");
         if (!is_null($sj)){
           $this->scenario=new qtype_coderunner_scenario($sj);
-        }
+        } else if (!isset($this->scenario)){
+	 $this->scenario=new qtype_coderunner_scenario(''); 
+	}
         $sj=$step->get_qt_var("_student");
         if (!is_null($sj)){// overwrite the one we already have
           $this->student=json_decode($sj);
+        } else if (!isset($this->student)){
+	  $this->student = new qtype_coderunner_student($USER); 
         }
     }
 

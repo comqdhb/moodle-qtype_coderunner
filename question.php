@@ -30,9 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/question/behaviour/adaptive/behaviour.php');
 require_once($CFG->dirroot . '/question/engine/questionattemptstep.php');
 require_once($CFG->dirroot . '/question/behaviour/adaptive_adapted_for_coderunner/behaviour.php');
-require_once($CFG->dirroot . '/question/type/coderunner/Twig/Autoloader.php');
 require_once($CFG->dirroot . '/question/type/coderunner/questiontype.php');
-
 
 use qtype_coderunner\constants;
 
@@ -43,6 +41,10 @@ class qtype_coderunner_question extends question_graded_automatically {
 
     public $testcases; // Array of testcases.
 
+    public $twigset;// =  new SplObjectStorage();
+    public $requires_scenario;
+    public $requires_student;
+    public $student;
     /**
      * Override default behaviour so that we can use a specialised behaviour
      * that caches test results returned by the call to grade_response().
@@ -80,6 +82,104 @@ class qtype_coderunner_question extends question_graded_automatically {
         return $this->is_gradable_response($response);
     }
 
+/**
+     * INHERITED FROM questionbase.php
+     * Start a new attempt at this question, storing any information that will
+     * be needed later in the step.
+     *
+     * This is where the question can do any initialisation required on a
+     * per-attempt basis. For example, this is where the multiple choice
+     * question type randomly shuffles the choices (if that option is set).
+     *
+     * Any information about how the question has been set up for this attempt
+     * should be stored in the $step, by calling $step->set_qt_var(...).
+     *
+     * @param question_attempt_step The first step of the {@link question_attempt}
+     *      being started. Can be used to store state.
+     * @param int $varant which variant of this question to start. Will be between
+     *      1 and {@link get_num_variants()} inclusive.
+     */
+    public function start_attempt(question_attempt_step $step, $variant) {
+           global $USER;
+           $this->student = new qtype_coderunner_student($USER);
+           parent::start_attempt($step,$variant);
+           $this->twigset =    array();
+           $this->capture_twig_variables();
+           $this->logit($this->twigset);
+           $this->initScenario("");     
+           if($this->requires_scenario && isset($this->scenario) && count($this->scenario->data)>0 ) {
+             $step->set_qt_var("_crs", $this->scenario->get_json_encoded());
+           }
+           if($this->requires_student  ) {
+             $step->set_qt_var("_student", json_encode( $this->student ));
+           }
+           $this->logit($this);
+    }
+    
+    public function initScenario($json){
+        $js=$json;
+
+	//need to iterate testecases,template and question text for twig variables
+
+
+        $sj="{\"data\":{\"a\":\"b\"},\"provides\":[],\"requires\":[],\"err_message\":null}";
+        $code='echo \'{{ SCENARIO.json }}\'  | sed "s/\"data\":{/\"data\":{\"now\":\"$(date)\",/g"';
+        $lang='sh';
+
+        $code=$this->scenariogenerator;
+        $lang=$this->scenariotype;
+
+        //NB only call jobe if code and lang exist
+        if (isset($code) && isset($lang) && $code !== '' && $lang !== ''){
+
+         if (!isset($this->jobe)) {
+             $this->jobe = new qtype_coderunner_jobesandbox();
+         }
+         $original_scenario=new qtype_coderunner_scenario($sj);
+         $original_scenario->STUDENT=$this->student;
+         $s = new stdClass();
+         $s->json=$original_scenario->get_json_encoded();
+ 
+         $cmd = $this->render_using_twig_with_params_forced($code,array('SCENARIO' => $s));        
+         //NB php_task.php in jobe needs modifying to have more memory and not enforce --no-php.ini
+         $jobe_answer = $this->jobe->execute($cmd, $lang, '');
+         $this->scenario = new qtype_coderunner_scenario((isset($jobe_answer->output)?$jobe_answer->output:''));
+        } else {
+          $this->scenario = new qtype_coderunner_scenario('');
+        }
+    }
+
+    /**
+     * INHERITED FROM questionbase.php
+     * When an in-progress {@link question_attempt} is re-loaded from the
+     * database, this method is called so that the question can re-initialise
+     * its internal state as needed by this attempt.
+     *
+     * For example, the multiple choice question type needs to set the order
+     * of the choices to the order that was set up when start_attempt was called
+     * originally. All the information required to do this should be in the
+     * $step object, which is the first step of the question_attempt being loaded.
+     *
+     * @param question_attempt_step The first step of the {@link question_attempt}
+     *      being loaded.
+     */
+    public function apply_attempt_state(question_attempt_step $step) {
+        global $USER;
+        parent::apply_attempt_state($step);
+        $sj=$step->get_qt_var("_crs");
+        if (!is_null($sj)){
+          $this->scenario=new qtype_coderunner_scenario($sj);
+        } else if (!isset($this->scenario)){
+	 $this->scenario=new qtype_coderunner_scenario(''); 
+	}
+        $sj=$step->get_qt_var("_student");
+        if (!is_null($sj)){// overwrite the one we already have
+          $this->student=json_decode($sj);
+        } else if (!isset($this->student)){
+	  $this->student = new qtype_coderunner_student($USER); 
+        }
+    }
+
 
     /**
      * In situations where is_gradable_response() returns false, this method
@@ -114,9 +214,147 @@ class qtype_coderunner_question extends question_graded_automatically {
 
 
     public function get_correct_answer() {
+        global $USER;
         // Return the sample answer, if supplied.
-        return isset($this->answer) ? array('answer' => $this->answer) : array();
+        return isset($this->answer) ? array('answer' => $this->render_using_twig($this->answer)) : array();
     }
+
+
+private function load_twig(){
+global $USER;
+if (!isset($this->twig)){
+          Twig_Autoloader::register();
+          $loader = new Twig_Loader_String();
+          $this->twig = new Twig_Environment($loader, array(
+            'debug' => true,
+            'autoescape' => false,
+            'optimizations' => 0
+            ));
+          $twigcore = $this->twig->getExtension('core');
+        $twigcore->setEscaper('py', 'qtype_coderunner_escapers::python');
+        $twigcore->setEscaper('python', 'qtype_coderunner_escapers::python');
+        $twigcore->setEscaper('c',  'qtype_coderunner_escapers::java');
+        $twigcore->setEscaper('java', 'qtype_coderunner_escapers::java');
+        $twigcore->setEscaper('ml', 'qtype_coderunner_escapers::matlab');
+        $twigcore->setEscaper('matlab', 'qtype_coderunner_escapers::matlab');
+           }
+}
+
+
+public function render_using_twig_with_params_forced($some_text,$params){
+          $this->load_twig();
+          return  $this->twig->render($some_text, $params);
+}
+
+
+public function build_twig_set($template){
+    preg_match_all('/\{\%\s*([^\%\}]*)\s*\%\}|\{\{\s*([^\}\}]*)\s*\}\}/i', $template, $matches);
+    foreach($matches[2] as $v){
+       $this->twigset[trim($v)]=null;
+    }
+}
+
+
+public function capture_twig_variables(){
+ $usetwig = ($this->usetwig == 1);
+        if ($usetwig){
+         //apply the template params to the student code
+         if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
+           try { $code     =   $question->render_using_twig_with_params($code,$this->templateparams);} catch (Exception $ee) {}
+         }
+         foreach ($this->testcases as $testcase) {
+            //capture Twig variables for the testcase
+                 $this->build_twig_set($testcase->testcode);
+                 $this->build_twig_set($testcase->stdin);
+                 $this->build_twig_set($testcase->expected);
+                 $this->build_twig_set($testcase->extra);
+            }
+        }
+       $this->build_twig_set($this->answer);
+       $this->build_twig_set($this->answerpreload);
+       $this->build_twig_set($this->template);
+       $this->build_twig_set($this->scenariogenerator);
+       if (isset($this->combinatortemplate)) {$this->build_twig_set($this->combinatortemplate);}
+       if (isset($this->pertesttemplate)) {$this->build_twig_set($this->pertesttemplate);}
+       $this->build_twig_set($this->questiontext);
+       /*
+  'STUDENT.username' => NULL,
+  'SCENARIO.now' => NULL,
+  'SCENARIO.a' => NULL,
+  'SCENARIO.mon' => NULL,
+  'QUESTION.id' => NULL,
+  'THIS' => NULL,
+  'STUDENT_ANSWER' => NULL,
+  'QUESTION.usetwig' => NULL,
+  '' => NULL,
+  'testCase.testcode' => NULL,
+  'SCENARIO.json | e(\'c\')' => NULL,
+*/
+  $rm = array();
+  $this->requires_scenario=false;
+  $this->requires_student=false;
+  foreach($this->twigset as $key => $val){
+    $query="STUDENT.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $this->requires_student=true;
+    }
+    $query="SCENARIO.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $this->requires_scenario=true;
+    }
+    $query="QUESTION.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    $query="testCase.";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    $query="THIS";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    $query="STUDENT_ANSWER";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+    if ($key === '') { $rm[$key]=$val;}
+    $query="SCENARIO.json";
+    if (substr($key, 0, strlen($query)) === $query){
+      $rm[$key] = $val;
+    }
+  }
+       $this->twigset= array_diff_key($this->twigset, $rm);
+}
+
+public function render_using_twig_with_params($some_text,$params){
+
+$result=$some_text;
+$this->load_twig();
+if (isset($this->usetwig) && $this->usetwig == 1)
+        {
+          $result = $this->render_using_twig_with_params_forced($result, $params);
+        }
+return $result;
+
+}
+
+
+public function render_using_twig($some_text){
+     global $USER;
+     $result=$some_text;
+     if (isset($this->usetwig) && $this->usetwig == 1)
+        {
+          $templateparams = array(
+            'IS_PRECHECK' =>  ($this->precheck?"1":"0"),
+            'QUESTION' => $this,
+            'STUDENT' => $this->student,
+            'SCENARIO' => $this->scenario->data
+            );
+          $result = $this->render_using_twig_with_params($result, $templateparams);
+        }
+      return $result;
+     }
 
     // Grade the given 'response'.
     // This implementation assumes a modified behaviour that will accept a
@@ -349,5 +587,12 @@ class qtype_coderunner_question extends question_graded_automatically {
             }
         }
         return $filemap;
+    }
+
+
+    public function logit($var){
+//	$x=var_export($var,true);
+//        $x = $x . "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n";
+//        file_put_contents("/var/www/moodledata/aa.log", $x, FILE_APPEND | LOCK_EX);
     }
 }

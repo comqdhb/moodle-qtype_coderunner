@@ -22,9 +22,7 @@
 
 
 defined('MOODLE_INTERNAL') || die();
-require_once($CFG->dirroot . '/question/type/coderunner/Twig/Autoloader.php');
 require_once($CFG->dirroot . '/question/type/coderunner/questiontype.php');
-require_once($CFG->dirroot . '/question/type/coderunner/classes/student.php');
 
 // The qtype_coderunner_jobrunner class contains all code concerned with running a question
 // in the sandbox and grading the result.
@@ -37,6 +35,7 @@ class qtype_coderunner_jobrunner {
     private $testcases = null;       // The testcases (a subset of those in the question).
     private $allruns = null;         // Array of the source code for all runs.
     private $precheck = null;        // True if this is a precheck run.
+    private $usetwig = null;         // True is twig rendering should be applied to tests and answers.
 
     // Check the correctness of a student's code as an answer to the given
     // question and and a given set of test cases (which may be empty or a
@@ -44,7 +43,7 @@ class qtype_coderunner_jobrunner {
     // this is a run triggered by the student clicking the Precheck button.
     // Returns a TestingOutcome object.
     public function run_tests($question, $code, $testcases, $isprecheck) {
-        global $CFG,$USER;
+        global $CFG, $USER;
 
         $this->question = $question;
         $this->code = $code;
@@ -74,27 +73,51 @@ class qtype_coderunner_jobrunner {
         $twigcore->setEscaper('matlab', 'qtype_coderunner_escapers::matlab');
 
         $this->allruns = array();
+
+
+
+
+        //first load up the template params
         $this->templateparams = array(
-            'STUDENT_ANSWER' => $code,
-            'ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::python(null, $code, null),
             'MATLAB_ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::matlab(null, $code, null),
             'IS_PRECHECK' => $isprecheck ? "1" : "0",
             'QUESTION' => $question,
             'STUDENT' => new qtype_coderunner_student($USER)
          );
-
-         $outcome = null;
-  
-         
-         foreach ($this->testcases as $testcase) {
-           //apply Twig variables to the testcase
- 	   try {
-		$testcase->expected  =   $this->twig->render($testcase->expected,$this->templateparams);
-           } catch (Exception $e) {
-             $testcase->expected = $e->getMessage();
-            //needs something to deal with not being able to render correctly like...
-           }
+         if (isset($question->scenario)){
+           $this->templateparams['SCENARIO']=$question->scenario->data;
+         } else {
+           $this->templateparams['SCENARIO']=new stdClass();
          }
+
+        $outcome = null;
+        //do we use twig renedering on the question?
+        $usetwig = ($question->usetwig == 1);
+        if ($usetwig){
+         //apply the template params to the student code
+         if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
+           try { $code     =   $question->render_using_twig_with_params($code,$this->templateparams);} catch (Exception $ee) {}
+         }
+         foreach ($this->testcases as $testcase) {
+            //apply Twig variables to the testcase
+  	   try {
+                 $testcase->testcode  =   $question->render_using_twig_with_params($testcase->testcode,$this->templateparams);
+                 $testcase->stdin     =   $question->render_using_twig_with_params($testcase->stdin,$this->templateparams);
+                 $testcase->expected  =   $question->render_using_twig_with_params($testcase->expected,$this->templateparams);
+ 	       	 $testcase->extra     =   $question->render_using_twig_with_params($testcase->extra,$this->templateparams);
+            } catch (Exception $e) {
+              $testcase->expected = $e->getMessage();
+             //needs something to deal with not being able to render correctly like...
+            }
+        }
+        try { $this->question->answer     =   $question->render_using_twig_with_params($this->question->answer,$this->templateparams);
+            } catch (Exception $e) {  }  
+       }
+
+       //now add the student code to the templateparams
+       $this->templateparams['STUDENT_ANSWER']=$code;
+       $this->templateparams['ESCAPED_STUDENT_ANSWER'] = qtype_coderunner_escapers::python(null, $code, null);
+
 
         if ( $question->get_is_combinator() and $this->has_no_stdins()) {
             $outcome = $this->run_combinator();
@@ -132,7 +155,7 @@ class qtype_coderunner_jobrunner {
         $maxmark = $this->maximum_possible_mark();
         $outcome = new qtype_coderunner_testing_outcome($maxmark, $numtests);
         try {
-            $testprog = $this->twig->render($this->template, $this->templateparams);
+            $testprog = $this->question->render_using_twig_with_params_forced($this->template, $this->templateparams);
         } catch (Exception $e) {
             $outcome->set_status(
                     qtype_coderunner_testing_outcome::STATUS_SYNTAX_ERROR,
@@ -183,6 +206,9 @@ class qtype_coderunner_jobrunner {
     // Run all tests one-by-one on the sandbox.
     private function run_tests_singly() {
         $maxmark = $this->maximum_possible_mark($this->testcases);
+        if ($maxmark == 0) {
+            $maxmark = 1; // Something silly is happening. Probably running a prototype with no tests.
+        }
         $numtests = count($this->testcases);
         $outcome = new qtype_coderunner_testing_outcome($maxmark, $numtests);
         foreach ($this->testcases as $testcase) {
@@ -192,7 +218,7 @@ class qtype_coderunner_jobrunner {
                 $this->templateparams['TEST'] = $testcase;
             }
             try {
-                $testprog = $this->twig->render($this->template, $this->templateparams);
+                $testprog = $this->question->render_using_twig_with_params_forced($this->template, $this->templateparams);
             } catch (Exception $e) {
                 $outcome->set_status(
                         qtype_coderunner_testing_outcome::STATUS_SYNTAX_ERROR,

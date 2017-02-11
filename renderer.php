@@ -23,6 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot . '/question/type/coderunner/questiontype.php');
 
 use qtype_coderunner\constants;
 
@@ -38,6 +39,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
 
     const FORCE_TABULAR_EXAMPLES = true;
 
+
     /**
      * Generate the display of the formulation part of the question. This is the
      * area that contains the question text, and the controls for students to
@@ -49,9 +51,31 @@ class qtype_coderunner_renderer extends qtype_renderer {
      * @return string HTML fragment.
      */
     public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
-        global $CFG, $PAGE;
+        global $CFG, $PAGE, $USER;
+
+
 
         $question = $qa->get_question();
+        $this->question=$question;
+        $this->usetwig = $question->usetwig;
+
+
+        //nb bad code will not check for usetwig and will therefore fail if the render is called
+        if ($this->usetwig==1){
+          $code =  $qa->get_last_qt_var('answer');
+          $this->templateparams = array(
+            'STUDENT_ANSWER' => $code,
+            'ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::python(null, $code, null),
+            'MATLAB_ESCAPED_STUDENT_ANSWER' => qtype_coderunner_escapers::matlab(null, $code, null),
+            'IS_PRECHECK' => ($question->precheck?"1": "0"),
+            'QUESTION' => $question,
+            'STUDENT' => $question->student,
+            'SCENARIO' => $question->scenario->data
+            );
+          $question->questiontext = $question->render_using_twig_with_params($question->questiontext, $this->templateparams);   
+        }
+
+
         $qtext = $question->format_questiontext($qa);
         $examples = $question->example_testcases();
         if (count($examples) > 0) {
@@ -60,7 +84,6 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $qtext .= $this->format_examples($examples);
             $qtext .= html_writer::end_tag('div');
         }
-
         $qtext .= html_writer::start_tag('div', array('class' => 'prompt'));
 
         if (empty($question->penaltyregime)) {
@@ -399,6 +422,11 @@ class qtype_coderunner_renderer extends qtype_renderer {
     private function format_examples_one_per_line($examples) {
         $text = '';
         foreach ($examples as $example) {
+            if ($this-usetwig==1){
+              $example->testcode = $question->twig_render($example->testcode, $this->templateparams);
+              $example->stdin = $question->twig_render($example->stdin, $this->templateparams);
+              $example->expected = $question->twig_render($example->expected, $this->templateparams);
+            }
             $text .= $example->testcode . ' &rarr; ' . $example->expected;
             $text .= html_writer::empty_tag('br');
         }
@@ -429,6 +457,17 @@ class qtype_coderunner_renderer extends qtype_renderer {
         foreach ($examples as $example) {
             $row = array();
             $rowclasses[$i] = $i % 2 == 0 ? 'r0' : 'r1';
+
+            if ($this->usetwig==1){
+              $example->testcode = $this->question->render_using_twig_with_params($example->testcode, $this->templateparams);
+              $example->stdin = $this->question->render_using_twig_with_params($example->stdin, $this->templateparams);
+              $example->expected = $this->question->render_using_twig_with_params($example->expected, $this->templateparams);
+            }
+
+
+
+
+
             if ($numshell) {
                 $row[] = qtype_coderunner_util::format_cell($example->testcode);
             }

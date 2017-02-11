@@ -64,11 +64,12 @@ CodeRunner currently supports Python2 (considered obsolescent), Python3,
 C, C++, Java, PHP, JavaScript (NodeJS), Octave and Matlab. 
 The architecture allows easy extension to other languages.
 
-For security and load reasons, it is recommended that CodeRunner be set up
-on a special quiz-server rather than on an institution-wide Moodle server.
-However, CodeRunner can safely be used on an institutional server, provided
-that the sandbox software in which code is run is installed on a separate
-machine with adequate security and firewalling.
+CodeRunner can safely be used on an institutional Moodle server, provided
+that the sandbox software in which code is run ("Jobe") is installed on a separate
+machine with adequate security and firewalling. However, if CodeRunner-based
+quizzes are to be used for tests and final exams, a separate Moodle server is
+recommended, both for load reasons and so that various Moodle communication facilities,
+like chat and messaging, can be turned off without impacting other classes.
 
 A single 4-core Moodle server can handle an average quiz question submission rate of
 about 60 quiz questions per minute while maintaining a response time of less
@@ -1447,8 +1448,9 @@ of the right name (preferably by importing the original correct prototype).
 To repeat:
 user-defined question types are not for the faint of heart. Caveat emptor.
 
-**WARNING #2:** although you can define test cases in a question prototype
-these have no relevance and are silently ignored.
+**WARNING #2:** although you can define test cases in a question prototype,
+e.g. for validation purposes, they are not inherited by the "children" of
+the prototype.
 
 ## A note on accessibility
 

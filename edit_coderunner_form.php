@@ -127,10 +127,12 @@ class qtype_coderunner_edit_form extends question_edit_form {
         $mform->addElement('textarea', 'answer',
                 get_string('answer', 'qtype_coderunner'),
                 array('rows' => 9, 'class' => 'answer edit_code'));
-        $mform->addElement('checkbox', 'validateonsave', null,
-                get_string('validateonsave', 'qtype_coderunner'));
+        $mform->addElement('advcheckbox', 'validateonsave', null, get_string('validateonsave', 'qtype_coderunner'));
         $mform->setDefault('validateonsave', false);
+
         $mform->addHelpButton('answer', 'answer', 'qtype_coderunner');
+
+
     }
 
     /**
@@ -463,6 +465,11 @@ class qtype_coderunner_edit_form extends question_edit_form {
         $typeselectorcheckboxes[] = $mform->createElement('advcheckbox', 'showsource', null,
                 get_string('showsource', 'qtype_coderunner'));
         $mform->setDefault('showsource', false);
+
+        $typeselectorcheckboxes[] = $mform->createElement('advcheckbox', 'usetwig', null,
+                get_string('usetwig', 'qtype_coderunner'));
+        $mform->setDefault('usetwig', false);
+
         $mform->addElement('group', 'coderunner_type_checkboxes',
                 get_string('questioncheckboxes', 'qtype_coderunner'), $typeselectorcheckboxes, null, false);
         $mform->addHelpButton('coderunner_type_checkboxes', 'questioncheckboxes', 'qtype_coderunner');
@@ -503,7 +510,6 @@ class qtype_coderunner_edit_form extends question_edit_form {
         // Marking controls.
         $markingelements = array();
         $markingelements[] = $mform->createElement('advcheckbox', 'allornothing',
-                get_string('marking', 'qtype_coderunner'),
                 get_string('allornothing', 'qtype_coderunner'));
         $markingelements[] = $mform->CreateElement('text', 'penaltyregime',
             get_string('penaltyregimelabel', 'qtype_coderunner'),
@@ -641,10 +647,29 @@ class qtype_coderunner_edit_form extends question_edit_form {
             get_string('ace-language', 'qtype_coderunner'),
             array('size' => 10));
         $mform->setType('acelang', PARAM_RAW);
+
         $mform->addElement('group', 'languages',
             get_string('languages', 'qtype_coderunner'),
             $languages, null, false);
         $mform->addHelpButton('languages', 'languages', 'qtype_coderunner');
+
+
+
+$mform->addElement('textarea', 'scenariogenerator',
+                get_string('scenariogenerator', 'qtype_coderunner'),
+                array('rows' => 9, 'class' => 'scenariogenerator edit_code'));
+
+$mform->addHelpButton('scenariogenerator', 'scenarios', 'qtype_coderunner');
+
+
+$scenarios = array();
+        $scenarios[]  = $mform->createElement('text', 'scenariotype',
+            get_string('scenariotype', 'qtype_coderunner'),
+            array('size' => 10));
+        $mform->setType('scenariotype', PARAM_RAW);
+        $mform->addElement('group', 'scenarios',
+            get_string('scenarios', 'qtype_coderunner'),
+            $scenarios, null, false);
 
         $mform->disabledIf('typename', 'prototypetype', 'neq', '2');
         $mform->disabledIf('testsplitterre', 'iscombinatortemplate', 'eq', 0);
@@ -755,10 +780,12 @@ class qtype_coderunner_edit_form extends question_edit_form {
             $question->$key = $value;
         }
         $question->isnew = true;
+        $question->ismodelanswer = true;
+        $question->initScenario("");
 
         // Clean the question object, get inherited fields and run the sample answer.
         $qtype = new qtype_coderunner();
-        $qtype->clean_question_form($question);
+        $qtype->clean_question_form($question, true);
         $questiontype = $question->coderunnertype;
         list($category) = explode(',', $question->category);
         $contextid = $DB->get_field('question_categories', 'contextid', array('id' => $category));

@@ -47,6 +47,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/question/engine/bank.php');
 require_once($CFG->dirroot . '/lib/questionlib.php');
+require_once($CFG->dirroot . '/question/type/coderunner/Twig/Autoloader.php');
 
 /**
  * qtype_coderunner extends the base question_type to coderunner-specific functionality.
@@ -92,6 +93,7 @@ class qtype_coderunner extends question_type {
             'answerboxcolumns',
             'answerpreload',
             'useace',
+            'usetwig',
             'resultcolumns',
             'template',
             'iscombinatortemplate',
@@ -105,7 +107,9 @@ class qtype_coderunner extends question_type {
             'cputimelimitsecs',
             'memlimitmb',
             'sandboxparams',
-            'templateparams'
+            'templateparams',
+            'scenariogenerator',
+            'scenariotype'
         );
     }
 
@@ -126,9 +130,12 @@ class qtype_coderunner extends question_type {
             'answerboxcolumns',
             'answerpreload',
             'useace',
+            'usetwig',
             'answer',
             'validateonsave',
-            'templateparams'
+            'templateparams',
+            'scenariogenerator',
+            'scenariotype'
             );
     }
 
@@ -270,15 +277,16 @@ class qtype_coderunner extends question_type {
 
     /**
      * Clean up the "question" (which is actually the question editing form)
-     * ready for saving or for testing before saving.
+     * ready for saving or for testing before saving ($isvalidation == true).
      * @param $question the question editing form
+     * @param $isvalidation true if we're cleaning for validation rather than saving.
      */
-    public function clean_question_form($question) {
+    public function clean_question_form($question, $isvalidation=false) {
         $fields = $this->extra_question_fields();
         array_shift($fields); // Discard table name.
         $customised = isset($question->customise) && $question->customise;
         $isprototype = $question->prototypetype != 0;
-        if ($customised && $question->prototypetype == 2 &&
+        if ($customised && $question->prototypetype == 2 && !$isvalidation &&
                 $question->coderunnertype != $question->typename) {
             // Saving a new user-defined prototype.
             // Copy new type name into coderunnertype.
@@ -289,7 +297,7 @@ class qtype_coderunner extends question_type {
         // unique by appending a suitable suffix. This shouldn't happen via
         // question edit form, but could be a spurious import or a question
         // duplication mouse click.
-        if ($question->isnew && $isprototype) {
+        if ($question->isnew && $isprototype && !$isvalidation) {
             $suffix = '';
             $type = $question->coderunnertype;
             while (true) {
@@ -613,6 +621,7 @@ class qtype_coderunner extends question_type {
             'validateonsave' => 0,
             'answerpreload' => '',
             'useace' => 1,
+            'usetwig' => 0,
             'iscombinatortemplate' => null,
             'template' => null
         );

@@ -37,6 +37,7 @@ $string['answer'] = 'Sample answer';
 $string['answerprompt'] = 'Answer:';
 $string['answer_help'] = 'A sample answer can be entered here and used for checking by the question author and optionally shown to students during review. It is also used by the bulk tester script. The correctness of a non-empty answer is checked when saving unless \'Validate on save\' is unchecked';
 $string['answerrequired'] = 'Please provide a non-empty answer';
+$string['usetwig_help'] = 'The sample snaswer and the tests can have Twig variables rendered into the text before they are submited to for marking.';
 $string['atleastonetest'] = 'You must provide at least one test case for this question.';
 $string['ace-language'] = 'Ace language';
 $string['advanced_customisation'] = 'Advanced customisation';
@@ -252,6 +253,7 @@ Set the penalty regime to \'0\' for zero penalties on all submissions.';
 $string['memorylimit'] = 'MemLimit (MB)';
 $string['missinganswers'] = 'missing answers';
 $string['missingoutput'] = 'You must supply the expected output from this test case.';
+$string['missingprototypes'] = 'Missing prototypes';
 
 $string['nearequalitygrader'] = 'Nearly exact match';
 $string['noqtype'] = 'No question type selected';
@@ -313,6 +315,8 @@ $string['precheck_only'] = 'Pre-check only';
 $string['precheckingemptyset'] = 'Prechecking examples, but there aren\'t any!';
 $string['proceed_at_own_risk'] = 'Editing a built-in question prototype?! Proceed at your own risk!';
 $string['prototypecontrols'] = 'Prototyping';
+$string['prototypeusage'] = 'CodeRunner question prototype usage for course {$a}';
+$string['prototypeusageindex'] = 'Available courses';
 $string['prototypecontrols_help'] = 'If \'Is prototype\' is true, this question becomes a prototype for other questions.
 After saving, the specified question type name will appear in the dropdown list
 of question types. New questions based on this type will then by default inherit
@@ -341,7 +345,10 @@ checkbox and read the help available on the newly-visible form elements for
 more information.
 
 If the template-debugging checkbox is clicked, the program generated
-for each testcase will be displayed in the output.';
+for each testcase will be displayed in the output.
+
+If the \'Use Twig rendering\' is ticked, the text of questions and thier
+tests will have {{ <variable>}} substituded when the answer is checked.';
 $string['questionloaderror'] = 'Failed to load question';
 $string['questionpreview'] = 'Question preview';
 $string['questiontype'] = 'Question type';
@@ -564,10 +571,17 @@ $string['type_header'] = 'CodeRunner question type';
 $string['typename'] = 'Question type';
 $string['typerequired'] = 'Please select the type of question (language, format, etc)';
 
-$string['unauthorisedbulktest'] = 'You do not have edit access to any CodeRunner questions';
+$string['unauthorisedbulktest'] = 'You do not have suitable access to any CodeRunner questions';
 $string['useasexample'] = 'Use as example';
 $string['useace'] = 'Use ace';
 
 $string['validateonsave'] = 'Validate on save';
 
+$string['usetwig'] = 'Use Twig rendering';
+
 $string['xmlcoderunnerformaterror'] = 'XML format error in coderunner question';
+
+$string['scenariotype'] = "The scenario generater language";
+$string['scenariogenerator'] = "A scenario generator";
+$string['scenarios'] = "Scenario generator";
+$string['scenarios_help'] = "The code to ammend the scenario with additional variables.  Choose a programming language to match the generator code";

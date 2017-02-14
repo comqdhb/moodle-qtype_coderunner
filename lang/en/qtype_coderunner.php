@@ -585,3 +585,6 @@ $string['scenariotype'] = "The scenario generater language";
 $string['scenariogenerator'] = "A scenario generator";
 $string['scenarios'] = "Scenario generator";
 $string['scenarios_help'] = "The code to ammend the scenario with additional variables.  Choose a programming language to match the generator code";
+
+$string['answerformatter'] = "Answer formatter";
+$string['answerformatter_help'] = "Answer formatter allows you to alter the way that the student answer is formatted.  Using javascript may allow graphs or other diagrams to be the mechanisms for entering the answer.";

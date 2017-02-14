@@ -107,6 +107,8 @@ class qtype_coderunner_renderer extends qtype_renderer {
         $qtext .= $answerprompt . $penaltystring;
         $qtext .= html_writer::end_tag('div');
 
+        
+        //here is where the answer is presented
         $responsefieldname = $qa->get_qt_field_name('answer');
         $responsefieldid = 'id_' . $responsefieldname;
         $rows = isset($question->answerboxlines) ? $question->answerboxlines : 18;
@@ -129,6 +131,21 @@ class qtype_coderunner_renderer extends qtype_renderer {
         if (empty($currentanswer)) {
             $currentanswer = $preload;
         }
+        
+        //choose between the new answer formatter or the default ace
+        $answer_formatter = $question->answerformatter;
+        if (isset($answer_formatter) && strlen(trim($answer_formatter))>0){
+            //expand the format and embed the sanitized current answer
+            $answer_formatter=$question->render_using_twig_with_params_forced(
+                    $answer_formatter,
+                    array('fieldname' => $responsefieldname,
+                          'fieldid'=>$responsefieldid,
+                          'currentanswer'=>s($currentanswer))
+                    ); 
+            $qtext .= html_writer::tag('textarea', s($currentanswer), $taattributes);
+            $qtext .= $answer_formatter.'\n';
+
+        } else {
         $qtext .= html_writer::tag('textarea', s($currentanswer), $taattributes);
 
         if ($qa->get_state() == question_state::$invalid) {
@@ -142,6 +159,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
         qtype_coderunner_util::load_ace_if_required($question, $responsefieldid, constants::USER_LANGUAGE);
         $PAGE->requires->js_call_amd('qtype_coderunner/textareas', 'initQuestionTA', array($responsefieldid));
 
+    }
         return $qtext;
     }
 

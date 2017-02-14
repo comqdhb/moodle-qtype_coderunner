@@ -109,7 +109,8 @@ class qtype_coderunner extends question_type {
             'sandboxparams',
             'templateparams',
             'scenariogenerator',
-            'scenariotype'
+            'scenariotype',
+            'answerformatter'
         );
     }
 
@@ -135,7 +136,8 @@ class qtype_coderunner extends question_type {
             'validateonsave',
             'templateparams',
             'scenariogenerator',
-            'scenariotype'
+            'scenariotype',
+            'answerformatter'
             );
     }
 

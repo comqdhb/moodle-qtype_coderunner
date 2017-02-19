@@ -142,8 +142,8 @@ class qtype_coderunner_renderer extends qtype_renderer {
                           'fieldid'=>$responsefieldid,
                           'currentanswer'=>s($currentanswer))
                     ); 
-            $qtext .= html_writer::tag('textarea', s($currentanswer), $taattributes);
-            $qtext .= $answer_formatter.'\n';
+         //   $qtext .= html_writer::tag('textarea', s($currentanswer), $taattributes);
+            $qtext .= $answer_formatter;
 
         } else {
         $qtext .= html_writer::tag('textarea', s($currentanswer), $taattributes);

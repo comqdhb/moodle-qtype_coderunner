@@ -129,7 +129,8 @@ class qtype_coderunner_renderer extends qtype_renderer {
 
         $currentanswer = $qa->get_last_qt_var('answer');
         if (empty($currentanswer)) {
-            $currentanswer = $preload;
+            $currentanswer = $this->question->render_using_twig_with_params($preload, $this->templateparams);
+            //$currentanswer = $preload;
         }
         
         //choose between the new answer formatter or the default ace

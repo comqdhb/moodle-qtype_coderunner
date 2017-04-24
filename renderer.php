@@ -403,10 +403,13 @@ class qtype_coderunner_renderer extends qtype_renderer {
             return '';
         }
 
+        $answer2=$question->render_using_twig_with_params_forced(
+                    $answer,$this->templateparams );
+
         $heading = get_string('asolutionis', 'qtype_coderunner');
         $html = html_writer::start_tag('div', array('class' => 'sample code'));
         $html .= html_writer::tag('h4', $heading);
-        $html .= html_writer::tag('pre', s($answer));
+        $html .= html_writer::tag('pre', s($answer2));
         $html .= html_writer::end_tag('div');
         return $html;
     }

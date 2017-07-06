@@ -94,6 +94,7 @@ class qtype_coderunner_jobrunner {
         //do we use twig renedering on the question?
         $usetwig = ($question->usetwig == 1);
         if ($usetwig){
+           $this->template = $this->question->render_using_twig_with_params($this->template, $this->templateparams);
          //apply the template params to the student code
          if (isset($this->question->ismodelanswer) ){//NB ismodelanswer is set by edit_coderunner.php to indicate model answer
            try { $code     =   $question->render_using_twig_with_params($code,$this->templateparams);} catch (Exception $ee) {}

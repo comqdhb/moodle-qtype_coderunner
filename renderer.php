@@ -261,11 +261,16 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $table = new html_table();
             $table->attributes['class'] = 'coderunner-test-results';
             $headers = $testresults[0];
+            try {
+            var_dump($headers);///////get rid of this line 
             foreach ($headers as $header) {
                 if (strtolower($header) != 'ishidden') {
                     $table->head[] = strtolower($header) === 'iscorrect' ? '' : $header;
                 }
             }
+            } catch (Exception $e) {
+    echo 'Caught exception: ',  $e->getMessage(), "\n";
+}
 
             $rowclasses = array();
             $tablerows = array();

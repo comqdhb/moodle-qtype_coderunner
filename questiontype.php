@@ -626,6 +626,8 @@ class qtype_coderunner extends question_type {
             'usetwig' => 0,
             'iscombinatortemplate' => null,
             'template' => null
+            'iscombinatortemplate' => null,  // Probably unnecessary?
+            'template' => null  // Probably unnecessary?
         );
 
         foreach ($extraquestionfields as $field) {

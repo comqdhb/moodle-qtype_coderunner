@@ -120,9 +120,11 @@ class qtype_coderunner_jobrunner {
        $this->templateparams['ESCAPED_STUDENT_ANSWER'] = qtype_coderunner_escapers::python(null, $code, null);
 
 
-        if ( $question->get_is_combinator() and $this->has_no_stdins()) {
-            $outcome = $this->run_combinator();
-        } 
+        if ($question->get_is_combinator() and $this->has_no_stdins()) {
+            $outcome = $this->run_combinator($isprecheck);
+        } else {
+            $outcome = null;
+        }
 
         // If that failed for any reason (e.g. timeout or signal), or if the
         // template isn't a combinator, run the tests individually. Any compilation
@@ -132,7 +134,7 @@ class qtype_coderunner_jobrunner {
 
         if ($outcome == null) {
             assert (!($question->get_is_combinator() && $this->grader->name() == 'TemplateGrader'));
-            $outcome = $this->run_tests_singly();
+            $outcome = $this->run_tests_singly($isprecheck);
         }
 
         $this->sandbox->close();
@@ -150,11 +152,11 @@ class qtype_coderunner_jobrunner {
     // IS_PRECHECK, which is true if this is a precheck run, TESTCASES,
     // a list of all the test cases and QUESTION, the original question object.
     // Return the testing outcome object if successful else null.
-    private function run_combinator() {
+    private function run_combinator($isprecheck) {
         $numtests = count($this->testcases);
         $this->templateparams['TESTCASES'] = $this->testcases;
         $maxmark = $this->maximum_possible_mark();
-        $outcome = new qtype_coderunner_testing_outcome($maxmark, $numtests);
+        $outcome = new qtype_coderunner_testing_outcome($maxmark, $numtests, $isprecheck);
         try {
             $testprog = $this->question->render_using_twig_with_params_forced($this->template, $this->templateparams);
         } catch (Exception $e) {
@@ -179,7 +181,7 @@ class qtype_coderunner_jobrunner {
                     qtype_coderunner_testing_outcome::STATUS_SANDBOX_ERROR,
                     qtype_coderunner_sandbox::error_string($run->error));
         } else if ($this->grader->name() === 'TemplateGrader') {
-            $outcome = $this->do_combinator_grading($run);
+            $outcome = $this->do_combinator_grading($run, $isprecheck);
         } else if ($run->result === qtype_coderunner_sandbox::RESULT_COMPILATION_ERROR) {
             $outcome->set_status(
                     qtype_coderunner_testing_outcome::STATUS_SYNTAX_ERROR,
@@ -205,13 +207,13 @@ class qtype_coderunner_jobrunner {
 
 
     // Run all tests one-by-one on the sandbox.
-    private function run_tests_singly() {
+    private function run_tests_singly($isprecheck) {
         $maxmark = $this->maximum_possible_mark($this->testcases);
         if ($maxmark == 0) {
             $maxmark = 1; // Something silly is happening. Probably running a prototype with no tests.
         }
         $numtests = count($this->testcases);
-        $outcome = new qtype_coderunner_testing_outcome($maxmark, $numtests);
+        $outcome = new qtype_coderunner_testing_outcome($maxmark, $numtests, $isprecheck);
         foreach ($this->testcases as $testcase) {
             if ($this->question->iscombinatortemplate) {
                 $this->templateparams['TESTCASES'] = array($testcase);
@@ -283,10 +285,10 @@ class qtype_coderunner_jobrunner {
      * array of pseudo-test_result objects) and some html for display after
      * the result table.
      */
-    private function do_combinator_grading($run) {
-        $outcome = new qtype_coderunner_combinator_grader_outcome();
+    private function do_combinator_grading($run, $isprecheck) {
+        $outcome = new qtype_coderunner_combinator_grader_outcome($isprecheck);
         if ($run->result !== qtype_coderunner_sandbox::RESULT_SUCCESS) {
-            $error = get_string('brokencombinatorgrader', 'qtype_coderunner',
+            $error = get_string('brokentemplategrader', 'qtype_coderunner',
                     array('output' => $run->cmpinfo . "\n" . $run->stderr));
             $outcome->set_status(qtype_coderunner_testing_outcome::STATUS_BAD_COMBINATOR, $error);
         } else {

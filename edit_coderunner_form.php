@@ -682,6 +682,7 @@ class qtype_coderunner_edit_form extends question_edit_form {
         $question->isnew = true;
         $question->ismodelanswer = true;
         $question->initScenario("");
+        $question->filemanagerdraftid = $this->get_file_manager();
 
         // Clean the question object, get inherited fields and run the sample answer.
         $qtype = new qtype_coderunner();
@@ -702,6 +703,20 @@ class qtype_coderunner_edit_form extends question_edit_form {
             $error = $outcome->validation_error_message();
             return $error;
         }
+    }
+
+
+    // Find the filemanager element draftid
+    private function get_file_manager() {
+        $mform = $this->_form;
+        $draftid = null;
+        foreach ($mform->_elements as $element) {
+            if ($element->_type == 'filemanager') {
+                $draftid = (int)$element->getValue();
+                break;
+            }
+        }
+        return $draftid;
     }
 
 }

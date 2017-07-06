@@ -86,7 +86,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
         }
         $qtext .= html_writer::start_tag('div', array('class' => 'prompt'));
 
-        if (empty($question->penaltyregime)) {
+        if (empty($question->penaltyregime) && $question->penaltyregime !== '0') {
             if (intval(100 * $question->penalty) == 100 * $question->penalty) {
                 $decdigits = 0;
             } else {
@@ -180,7 +180,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
         $q = $qa->get_question();
         $outcome = unserialize($toserialised);
         $resultsclass = $this->results_class($outcome, $q->allornothing);
-        $isprecheck = $qa->get_last_behaviour_var('_precheck', 0);
+        $isprecheck = $outcome->is_precheck($qa);
         if ($isprecheck) {
             $resultsclass .= ' precheck';
         }
@@ -197,7 +197,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $fb .= html_writer::tag('p', s($outcome->errormessage),
                     array('class' => 'run_failed_error'));
         } else if ($outcome->has_syntax_error()) {
-            $fb .= html_writer::tag('h3', get_string('syntax_errors', 'qtype_coderunner'));
+            $fb .= html_writer::tag('h5', get_string('syntax_errors', 'qtype_coderunner'));
             $fb .= html_writer::tag('pre', s($outcome->errormessage),
                     array('class' => 'pre_syntax_error'));
         } else if ($outcome->combinator_error()) {
@@ -317,7 +317,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
             return $this->build_combinator_grader_feedback_summary($qa, $outcome);
         }
         $question = $qa->get_question();
-        $isprecheck = $qa->get_last_behaviour_var('_precheck', 0);
+        $isprecheck = $outcome->is_precheck($qa);
         $lines = array();  // List of lines of output.
 
         $onlyhiddenfailed = false;
@@ -361,7 +361,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
     // A special case of the above method for use with combinator template graders
     // only.
     protected function build_combinator_grader_feedback_summary($qa, qtype_coderunner_combinator_grader_outcome $outcome) {
-        $isprecheck = $qa->get_last_behaviour_var('_precheck', 0);
+        $isprecheck = $outcome->is_precheck($qa);
         $lines = array();  // List of lines of output.
 
         if ($outcome->all_correct() && !$isprecheck) {

@@ -61,7 +61,7 @@ $string['badquestion'] = 'Error in question';
 $string['badsandboxparams'] = '\'Other\' field (sandbox params) must be either blank or a valid JSON record';
 $string['badtemplateparams'] = 'Template parameters must be either blank or a valid JSON record';
 $string['brokencombinator'] = 'Broken combinator. Expected {$a->numtests} test results, got {$a->numresults}. Please report this error to your tutor.';
-$string['brokencombinatorgrader'] = 'Bad output from grader: {$a->output}. Please report this error to your tutor.';
+$string['brokentemplategrader'] = 'Bad output from grader: {$a->output}. Your program execution may have aborted (e.g. a timeout or memory limit exceeded).';
 $string['bulkquestiontester'] = 'The <a href="{$a->link}">bulk tester script</a> tests that the sample answers for all questions in the current context are marked right';
 $string['bulktestcontinuefromhere'] = 'Run again or resume, starting from here';
 $string['bulktestindextitle'] = 'CodeRunner bulk testing';
@@ -211,7 +211,7 @@ $string['is_prototype'] = 'Use as prototype';
 $string['jobe_apikey'] = 'Jobe API-key';
 $string['jobe_apikey_desc'] = 'The API key to be included in all REST requests to the Jobe server (if required). Max 40 chars. Leave blank to omit the API Key from requests';
 $string['jobe_host'] = 'Jobe server';
-$string['jobe_host_desc'] = 'The host name of the Jobe server plus the port number if other than port 80, e.g. jobe.somewhere.edu:4010';
+$string['jobe_host_desc'] = 'The host name of the Jobe server plus the port number if other than port 80, e.g. jobe.somewhere.edu:4010. The URL for the Jobe request is obtained by prefixing this string with http:// and appending /jobe/index.php/restapi/<REST_METHOD>.';
 
 $string['language'] = 'Sandbox language';
 $string['languages'] = 'Languages';

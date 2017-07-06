@@ -60,7 +60,7 @@ class qtype_coderunner_question extends question_graded_automatically {
     }
 
     public function get_expected_data() {
-        return array('answer' => PARAM_RAW, 'rating' => PARAM_INT);
+        return array('answer' => PARAM_RAW);
     }
 
 
@@ -206,13 +206,8 @@ class qtype_coderunner_question extends question_graded_automatically {
      * @return boolean
      */
     public function is_same_response(array $prevresponse, array $newresponse) {
-        if (!question_utils::arrays_same_at_key_missing_is_blank(
-                $prevresponse, $newresponse, 'answer')
-            || !question_utils::arrays_same_at_key_integer(
-                $prevresponse, $newresponse, 'rating')) {
-            return false;
-        }
-        return true;
+        return question_utils::arrays_same_at_key_missing_is_blank(
+                $prevresponse, $newresponse, 'answer');
     }
 
     public function get_correct_response() {
@@ -384,15 +379,22 @@ public function render_using_twig($some_text){
         if ($isprecheck && empty($this->precheck)) {
             throw new coding_exception("Unexpected precheck");
         }
-        if (empty($response['_testoutcome'])) {
+        $gradingreqd = true;
+        if (!empty($response['_testoutcome'])) {
+            $testoutcomeserial = $response['_testoutcome'];
+            $testoutcome = unserialize($testoutcomeserial);
+            if ($testoutcome->isprecheck == $isprecheck) {
+                $gradingreqd = false;  // Already graded and with same precheck state
+            }
+        }
+        if ($gradingreqd) {
+            // We haven't already graded this submission or we graded it with
+            // a different precheck setting
             $code = $response['answer'];
             $testcases = $this->filter_testcases($isprecheck, $this->precheck);
             $runner = new qtype_coderunner_jobrunner();
             $testoutcome = $runner->run_tests($this, $code, $testcases, $isprecheck);
             $testoutcomeserial = serialize($testoutcome);
-        } else {
-            $testoutcomeserial = $response['_testoutcome'];
-            $testoutcome = unserialize($testoutcomeserial);
         }
 
         $datatocache = array('_testoutcome' => $testoutcomeserial);
@@ -589,7 +591,7 @@ public function render_using_twig($some_text){
      *  row) and the questionid from the mdl_questions table.
      */
     private static function get_data_files($question, $questionid) {
-        global $DB;
+        global $DB, $USER;
 
         // If not given in the question object get the contextid from the database.
         if (isset($question->contextid)) {
@@ -601,7 +603,16 @@ public function render_using_twig($some_text){
 
         $fs = get_file_storage();
         $filemap = array();
-        $files = $fs->get_area_files($contextid, 'qtype_coderunner', 'datafile', $questionid);
+
+        if (isset($question->filemanagerdraftid)) {
+            // If we're just validating a question, get files from user draft area
+            $draftid = $question->filemanagerdraftid;
+            $context = context_user::instance($USER->id);
+            $files = $fs->get_area_files($context->id, 'user', 'draft', $draftid, '', false);
+        } else {
+            // Otherwise, get the stored files for this question
+            $files = $fs->get_area_files($contextid, 'qtype_coderunner', 'datafile', $questionid);
+        }
 
         foreach ($files as $f) {
             $name = $f->get_filename();

@@ -58,7 +58,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
         $question = $qa->get_question();
         $this->question=$question;
         $this->usetwig = $question->usetwig;
-
+        $this->usetwig = 1;
 
         //nb bad code will not check for usetwig and will therefore fail if the render is called
         if ($this->usetwig==1){
@@ -129,8 +129,11 @@ class qtype_coderunner_renderer extends qtype_renderer {
 
         $currentanswer = $qa->get_last_qt_var('answer');
         if (empty($currentanswer)) {
+           if ($this->usetwig==1){ 
             $currentanswer = $this->question->render_using_twig_with_params($preload, $this->templateparams);
-            //$currentanswer = $preload;
+           } else {
+            $currentanswer = $preload;
+           }
         }
         
         //choose between the new answer formatter or the default ace

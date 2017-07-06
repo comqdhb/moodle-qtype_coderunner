@@ -625,7 +625,7 @@ class qtype_coderunner extends question_type {
             'useace' => 1,
             'usetwig' => 0,
             'iscombinatortemplate' => null,
-            'template' => null
+            'template' => null,
             'iscombinatortemplate' => null,  // Probably unnecessary?
             'template' => null  // Probably unnecessary?
         );

@@ -194,18 +194,28 @@ class qtype_coderunner_question extends question_graded_automatically {
                 return get_string('answertooshort', 'qtype_coderunner');
             }
         }
-        return get_string('unknownerror', 'qtype_coderunner');
+        if (array_key_exists('_testoutcome', $response)) {
+            $outcome = unserialize($response['_testoutcome']);
+            return $outcome->errormessage;
+        } else {
+            return get_string('unknownerror', 'qtype_coderunner');
+        }
     }
 
 
     /** This function is used by the question engine to prevent regrading of
-     *  unchanged submissions.
+     *  unchanged submissions. This has been disabled (it always returns false)
+     *  to avoid confusion by authors and students when changing templates
+     *  or other question data. It seems that this is more of a problem for
+     *  CodeRunner than normal question types. The slight downside is that
+     *  students pay a penalty for submitting the same code twice.
      *
      * @param array $prevresponse
      * @param array $newresponse
      * @return boolean
      */
     public function is_same_response(array $prevresponse, array $newresponse) {
+
         return question_utils::arrays_same_at_key_missing_is_blank(
                 $prevresponse, $newresponse, 'answer');
     }
@@ -383,7 +393,8 @@ public function render_using_twig($some_text){
         if (!empty($response['_testoutcome'])) {
             $testoutcomeserial = $response['_testoutcome'];
             $testoutcome = unserialize($testoutcomeserial);
-            if ($testoutcome->isprecheck == $isprecheck) {
+            if ($testoutcome instanceof qtype_coderunner_testing_outcome  // Ignore legacy-format outcomes
+                    && $testoutcome->isprecheck == $isprecheck) {
                 $gradingreqd = false;  // Already graded and with same precheck state
             }
         }
@@ -402,12 +413,35 @@ public function render_using_twig($some_text){
             return array(0, question_state::$invalid, $datatocache);
         } else if ($testoutcome->all_correct()) {
              return array(1, question_state::$gradedright, $datatocache);
-        } else if ($this->allornothing && $this->grader !== 'TemplateGrader') {
+        } else if ($this->allornothing &&
+                !($this->grader === 'TemplateGrader' && $this->iscombinatortemplate)) {
             return array(0, question_state::$gradedwrong, $datatocache);
         } else {
+            // Allow partial marks if not allornothing or if it's a combinator template grader
             return array($testoutcome->mark_as_fraction(),
                     question_state::$gradedpartial, $datatocache);
         }
+    }
+
+
+    /**
+     * @return an array of result column specifiers, each being a 2-element
+     *  array of a column header and the testcase field to be displayed
+     */
+    public function result_columns() {
+        if (isset($this->resultcolumns) && $this->resultcolumns) {
+            $resultcolumns = json_decode($this->resultcolumns);
+        } else {
+            // Use default column headers, equivalent to json_decode of (in English):
+            // '[["Test", "testcode"], ["Input", "stdin"], ["Expected", "expected"], ["Got", "got"]]'.
+            $resultcolumns = array(
+                array(get_string('testcolhdr', 'qtype_coderunner'), 'testcode'),
+                array(get_string('inputcolhdr', 'qtype_coderunner'), 'stdin'),
+                array(get_string('expectedcolhdr', 'qtype_coderunner'), 'expected'),
+                array(get_string('gotcolhdr', 'qtype_coderunner'), 'got'),
+            );
+        }
+        return $resultcolumns;
     }
 
 
@@ -511,22 +545,29 @@ public function render_using_twig($some_text){
         return $this->iscombinatortemplate;
     }
 
+
+    // Return whether or not multiple stdins are allowed when using combiantor
+    public function allow_multiple_stdins() {
+        return $this->allowmultiplestdins;
+    }
+
     // Return an instance of the sandbox to be used to run code for this question.
     public function get_sandbox() {
         global $CFG;
         $sandbox = $this->sandbox; // Get the specified sandbox (if question has one).
         if ($sandbox === null) {   // No sandbox specified. Use best we can find.
-            $sandbox = qtype_coderunner_sandbox::get_best_sandbox($this->language);
-            if ($sandbox === null) {
+            $sandboxinstance = qtype_coderunner_sandbox::get_best_sandbox($this->language);
+            if ($sandboxinstance === null) {
                 throw new qtype_coderunner_exception("Language {$this->language} is not available on this system");
             }
         } else {
-            if (!get_config('qtype_coderunner', strtolower($sandbox) . '_enabled')) {
-                throw new qtype_coderunner_exception("Question is configured to use a disabled sandbox ($sandbox)");
+            $sandboxinstance = qtype_coderunner_sandbox::get_instance($sandbox);
+            if ($sandboxinstance === null) {
+                throw new qtype_coderunner_exception("Question is configured to use a non-existent or disabled sandbox ($sandbox)");
             }
         }
 
-        return qtype_coderunner_sandbox::make_sandbox($sandbox);
+        return $sandboxinstance;
     }
 
 

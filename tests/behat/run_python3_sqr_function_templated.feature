@@ -18,7 +18,7 @@ Feature: Combinator template is called test-by-test if a runtime error occurs wh
       | contextlevel | reference | questioncategory | name          |
       | Course       | C1        | Top              | Behat Testing |
     And I log in as "teacher1"
-    And I follow "Course 1"
+    And I follow "C1"
     And I navigate to "Question bank" node in "Course administration"
     And I add a "CodeRunner" question filling the form with:
       | id_coderunnertype | python3                 |
@@ -76,7 +76,7 @@ Feature: Combinator template is called test-by-test if a runtime error occurs wh
       | Test    |
       | sqr(11) |
     And "sqr(11)" row "Expected" column of "coderunner-test-results" table should contain "121"
-    #And I should see "***Runtime&nbsp;error***"  # WHY DOESN'T THIS WORK (with or without &nbsp;)??
+    #And I should see "***Error***"  # WHY DOESN'T THIS WORK (with or without &nbsp;)??
     And the following should not exist in the "coderunner-test-results" table:
       | sqr(-3) |
     And I should see "Testing was aborted due to error."

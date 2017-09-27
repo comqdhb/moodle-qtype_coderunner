@@ -139,31 +139,29 @@ class qtype_coderunner_testing_outcome {
             return get_string('syntax_errors', 'qtype_coderunner') . html_writer::tag('pre', $this->errormessage);
         } else if ($this->combinator_error()) {
             return get_string('badquestion', 'qtype_coderunner') . html_writer::tag('pre', $this->errormessage);
-        } else {
-            if ($this->iscombinatorgrader()) {
-                $message = get_string('failedtesting', 'qtype_coderunner'); // Combinator graders are too hard!
-            } else {
-                $numerrors = 0;
-                $firstfailure = '';
-                if (isset($this->testresults)) { // Combinator graders may not have test results.
-                    foreach ($this->testresults as $testresult) {
-                        if (!$testresult->iscorrect) {
-                            $numerrors += 1;
-                            if ($firstfailure === '' && isset($testresult->expected) && isset($testresult->got)) {
-                                $errorhtml = $this->make_error_html($testresult->expected, $testresult->got);
-                                $firstfailure = get_string('firstfailure', 'qtype_coderunner', $errorhtml);
-                            }
-                        }
+        } else if (!empty($this->testresults)) { // Combinator graders may not have test results.
+            $numerrors = 0;
+            $firstfailure = '';
+            foreach ($this->testresults as $testresult) {
+                if (!$testresult->iscorrect) {
+                    $numerrors += 1;
+                    if ($firstfailure === '' && isset($testresult->expected) && isset($testresult->got)) {
+                        $errorhtml = $this->make_error_html($testresult->expected, $testresult->got);
+                        $firstfailure = get_string('firstfailure', 'qtype_coderunner', $errorhtml);
                     }
-                    $message = get_string('failedntests', 'qtype_coderunner', array(
-                        'numerrors' => $numerrors));
-                    if ($firstfailure) {
-                        $message .= html_writer::empty_tag('br') . $firstfailure;
-                    };
                 }
             }
-            return $message . html_writer::empty_tag('br') . get_string('howtogetmore', 'qtype_coderunner');
+            $message = get_string('failedntests', 'qtype_coderunner', array(
+                'numerrors' => $numerrors));
+            if ($firstfailure) {
+                $message .= html_writer::empty_tag('br') . $firstfailure;
+            } else {
+                $message .= get_string('failedtesting', 'qtype_coderunner');
+            }
+        } else {
+            $message = get_string('failedtesting', 'qtype_coderunner');
         }
+        return $message . html_writer::empty_tag('br') . get_string('howtogetmore', 'qtype_coderunner');
     }
 
     /**
@@ -183,7 +181,8 @@ class qtype_coderunner_testing_outcome {
      * hidden from view unless the user has the grade:viewhidden capability.
      *
      * The set of columns to be displayed is specified by the question's
-     * resultcolumns variable. This is a JSON-encoded list of column specifiers.
+     * resultcolumns variable (which should be accessed via its result_columns
+     * method). The resultcolumns attribute is a JSON-encoded list of column specifiers.
      * A column specifier is itself a list, usually with 2 or 3 elements.
      * The first element is the column header the second is (usually) the test
      * result object field name whose value is to be displayed in the column
@@ -201,18 +200,7 @@ class qtype_coderunner_testing_outcome {
 
         global $COURSE;
 
-        if (isset($question->resultcolumns) && $question->resultcolumns) {
-            $resultcolumns = json_decode($question->resultcolumns);
-        } else {
-            // Use default column headers, equivalent to json_decode of (in English):
-            // '[["Test", "testcode"], ["Input", "stdin"], ["Expected", "expected"], ["Got", "got"]]'.
-            $resultcolumns = array(
-                array(get_string('testcolhdr', 'qtype_coderunner'), 'testcode'),
-                array(get_string('inputcolhdr', 'qtype_coderunner'), 'stdin'),
-                array(get_string('expectedcolhdr', 'qtype_coderunner'), 'expected'),
-                array(get_string('gotcolhdr', 'qtype_coderunner'), 'got'),
-            );
-        }
+        $resultcolumns = $question->result_columns();
         if ($COURSE && $coursecontext = context_course::instance($COURSE->id)) {
             $canviewhidden = has_capability('moodle/grade:viewhidden', $coursecontext);
         } else {
@@ -355,7 +343,7 @@ class qtype_coderunner_testing_outcome {
         $table->attributes['class'] = 'coderunner-test-results';
         $table->head = array(get_string('expectedcolhdr', 'qtype_coderunner'),
                              get_string('gotcolhdr', 'qtype_coderunner'));
-        $table->data = array(array(html_writer::tag('pre', $expected), html_writer::tag('pre', $got)));
+        $table->data = array(array(html_writer::tag('pre', s($expected)), html_writer::tag('pre', s($got))));
         return html_writer::table($table);
     }
 

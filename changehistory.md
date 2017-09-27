@@ -1,6 +1,32 @@
 # CHANGE HISTORY
 
-23 May 2017. Version 3.1.5
+### 31 July 2017. Version 3.2.0
+
+* Add allow_multiple_stdins option for advanced use of combinator templates.
+  This option disables the usual behaviour of running combinator templates
+  once for each test when any tests have standard input defined. When enabled,
+  the combinator is given all testcases (as when standard input is not present)
+  and must itself manage the switching of standard inputs between tests.
+* Bug fix: All-or-nothing checkbox was not labelled when using Clean theme
+* Bug fix: All-or-nothing grading was not working with per-test-case template
+  graders - students were getting partial marks.
+* Change **Runtime Error** message to just **Error** since it's not always
+  clear what is runtime versus compile time.
+* Change DB type of templateparams to text (was char(255)) to allow for
+  more elaborate template parameters.
+* Use text area for template params rather than a one-line entry field in 
+  order to cater for longer multi-line template parameters
+* Update the uocprototypes.xml file in the samples directory to the latest
+  version.
+* Incorporate style changes from Open University (thanks Mahmoud Kassaei) for
+  improved accessibility of the Ace editor.
+* Fix bug in display of "For example" table when question has customised
+  columns/headers.
+* Improve various tests, e.g. fork bomb.
+* Some documentation updates.
+
+
+### 23 May 2017. Version 3.1.5
 
 * Major bug fix: when grading of questions when precheck enabled, if a student's
   last submission to a question prior to closing the quiz was a precheck that passed, 

@@ -55,6 +55,14 @@ class qtype_coderunner_combinator_grader_outcome extends qtype_coderunner_testin
         return true;
     }
 
+    public function validation_error_message() {
+        if (!empty($this->prologuehtml)) {
+            return $this->prologuehtml . "\n" . parent::validation_error_message();
+        } else {
+            return parent::validation_error_message();
+        }
+    }
+
     // Getter methods for use by renderer.
     // ==================================.
 
@@ -68,5 +76,10 @@ class qtype_coderunner_combinator_grader_outcome extends qtype_coderunner_testin
 
     public function get_epilogue() {
         return empty($this->epiloguehtml) ? '' : $this->epiloguehtml;
+    }
+
+    public function show_differences() {
+        return $this->actualmark != 1.0 && isset($this->showdifferences) &&
+               $this->showdifferences &&  isset($this->testresults);
     }
 }

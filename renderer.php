@@ -37,8 +37,6 @@ use qtype_coderunner\constants;
 
 class qtype_coderunner_renderer extends qtype_renderer {
 
-    const FORCE_TABULAR_EXAMPLES = true;
-
 
     /**
      * Generate the display of the formulation part of the question. This is the
@@ -79,9 +77,11 @@ class qtype_coderunner_renderer extends qtype_renderer {
         $qtext = $question->format_questiontext($qa);
         $examples = $question->example_testcases();
         if (count($examples) > 0) {
-            $qtext .= html_writer::tag('p', 'For example:', array('class' => 'for-example-para'));
+            $forexample = get_string('forexample', 'qtype_coderunner');
+            $qtext .= html_writer::tag('p', $forexample . ':', array('class' => 'for-example-para'));
             $qtext .= html_writer::start_tag('div', array('class' => 'coderunner-examples'));
-            $qtext .= $this->format_examples($examples);
+            $resultcolumns = $question->result_columns();
+            $qtext .= $this->format_examples($examples, $resultcolumns);
             $qtext .= html_writer::end_tag('div');
         }
         $qtext .= html_writer::start_tag('div', array('class' => 'prompt'));
@@ -99,28 +99,30 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $penalties = $question->penaltyregime;
         }
 
-        $answerprompt = html_writer::tag('span',
-                get_string('answerprompt', 'qtype_coderunner'), array('class' => 'answerprompt'));
+        $responsefieldname = $qa->get_qt_field_name('answer');
+        $responsefieldid = 'id_' . $responsefieldname;
+        $answerprompt = html_writer::tag('label',
+                get_string('answerprompt', 'qtype_coderunner'), array('class' => 'answerprompt', 'for' => $responsefieldid));
         $penaltystring = html_writer::tag('span',
-            get_string('penaltyregime', 'qtype_coderunner', $penalties),
-            array('class' => 'penaltyregime'));
+                get_string('penaltyregime', 'qtype_coderunner', $penalties),
+                array('class' => 'penaltyregime'));
         $qtext .= $answerprompt . $penaltystring;
         $qtext .= html_writer::end_tag('div');
 
-        
+    
         //here is where the answer is presented
-        $responsefieldname = $qa->get_qt_field_name('answer');
-        $responsefieldid = 'id_' . $responsefieldname;
+        //$responsefieldname = $qa->get_qt_field_name('answer');
+        //$responsefieldid = 'id_' . $responsefieldname;
         $rows = isset($question->answerboxlines) ? $question->answerboxlines : 18;
         $cols = isset($question->answerboxcolumns) ? $question->answerboxcolumns : 100;
         $preload = isset($question->answerpreload) ? $question->answerpreload : '';
         $taattributes = array(
-            'class' => 'coderunner-answer edit_code',
-            'name'  => $responsefieldname,
-            'id'    => $responsefieldid,
-            'cols'      => $cols,
-            'spellcheck' => 'false',
-            'rows'      => $rows
+                'class' => 'coderunner-answer edit_code',
+                'name'  => $responsefieldname,
+                'id'    => $responsefieldid,
+                'cols'      => $cols,
+                'spellcheck' => 'false',
+                'rows'      => $rows
         );
 
         if ($options->readonly) {
@@ -154,7 +156,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
 
         if ($qa->get_state() == question_state::$invalid) {
             $qtext .= html_writer::nonempty_tag('div',
-                    $question->get_validation_error(array('answer' => $currentanswer)),
+                    $question->get_validation_error($qa->get_last_qt_data()),
                     array('class' => 'validationerror'));
         }
 
@@ -196,7 +198,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
 
         $fb .= html_writer::start_tag('div', array('class' => $resultsclass));
         if ($outcome->run_failed()) {
-            $fb .= html_writer::tag('h3', get_string('run_failed', 'qtype_coderunner'));;
+            $fb .= html_writer::tag('h5', get_string('run_failed', 'qtype_coderunner'));;
             $fb .= html_writer::tag('p', s($outcome->errormessage),
                     array('class' => 'run_failed_error'));
         } else if ($outcome->has_syntax_error()) {
@@ -204,7 +206,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
             $fb .= html_writer::tag('pre', s($outcome->errormessage),
                     array('class' => 'pre_syntax_error'));
         } else if ($outcome->combinator_error()) {
-            $fb .= html_writer::tag('h3', get_string('badquestion', 'qtype_coderunner'));
+            $fb .= html_writer::tag('h5', get_string('badquestion', 'qtype_coderunner'));
             $fb .= html_writer::tag('pre', s($outcome->errormessage),
                     array('class' => 'pre_question_error'));
 
@@ -368,6 +370,10 @@ class qtype_coderunner_renderer extends qtype_renderer {
                     "&nbsp;" . $this->feedback_image(1.0);
         }
 
+        if ($outcome->show_differences()) {
+             $lines[] = $this->diff_button($qa);
+        }
+
         return qtype_coderunner_util::make_html_para($lines);
     }
 
@@ -419,6 +425,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
     }
 
 
+
     // Format one or more examples.
     protected function format_examples($examples) {
         if ($this->all_single_line($examples) && ! self::FORCE_TABULAR_EXAMPLES) {
@@ -459,21 +466,31 @@ class qtype_coderunner_renderer extends qtype_renderer {
         return $text;
     }
 
+
     /**
      *
      * @param array $examples The array of testcases tagged "use as example"
+     * @param array $resultcolumns the array of 2-element arrays specifying what
+     * columns should appear in the result table
      * @return string An HTML table element displaying all the testcases.
      */
-    private function format_examples_as_table($examples) {
+    private function format_examples($examples, $resultcolumns) {
         $table = new html_table();
         $table->attributes['class'] = 'coderunnerexamples';
-        list($numstd, $numshell) = $this->count_bits($examples);
+        list($numtests, $numstds, $numextras) = $this->count_bits($examples);
         $table->head = array();
-        if ($numshell) {
-            $table->head[] = 'Test';
+        $showtests = $showstds = $showextras = false;
+        if ($numtests && $this->show_column('testcode', $resultcolumns)) {
+            $table->head[] = $this->column_header('testcode', $resultcolumns);
+            $showtests = true;
         }
-        if ($numstd) {
-            $table->head[] = 'Input';
+        if ($numstds && $this->show_column('stdin', $resultcolumns)) {
+            $table->head[] = $this->column_header('stdin', $resultcolumns);
+            $showstds = true;
+        }
+        if ($numextras && $this->show_column('extra', $resultcolumns)) {
+            $table->head[] = $this->column_header('extra', $resultcolumns);
+            $showextras = true;
         }
         $table->head[] = 'Result';
 
@@ -483,6 +500,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
         foreach ($examples as $example) {
             $row = array();
             $rowclasses[$i] = $i % 2 == 0 ? 'r0' : 'r1';
+
 
             if ($this->usetwig==1){
               $example->testcode = $this->question->render_using_twig_with_params($example->testcode, $this->templateparams);
@@ -494,11 +512,15 @@ class qtype_coderunner_renderer extends qtype_renderer {
 
 
 
-            if ($numshell) {
+            if ($showtests) {
+
                 $row[] = qtype_coderunner_util::format_cell($example->testcode);
             }
-            if ($numstd) {
+            if ($showstds) {
                 $row[] = qtype_coderunner_util::format_cell($example->stdin);
+            }
+            if ($showextras) {
+                $row[] = qtype_coderunner_util::format_cell($example->extra);
             }
             $row[] = qtype_coderunner_util::format_cell($example->expected);
             $tablerows[] = $row;
@@ -510,20 +532,47 @@ class qtype_coderunner_renderer extends qtype_renderer {
     }
 
 
-    // Return a count of the number of non-empty stdins and non-empty shell
-    // inputs in the given list of test result objects.
+    // Return a count of the number of non-empty stdins, tests and extras
+    // in the given list of test result objects.
     private function count_bits($tests) {
         $numstds = 0;
-        $numshell = 0;
+        $numtests = 0;
+        $numextras = 0;
         foreach ($tests as $test) {
             if (trim($test->stdin) !== '') {
                 $numstds++;
             }
             if (trim($test->testcode) !== '') {
-                $numshell++;
+                $numtests++;
+            }
+            if (trim($test->extra) !== '') {
+                $numextras++;
             }
         }
-        return array($numstds, $numshell);
+        return array($numtests, $numstds, $numextras);
+    }
+
+    // True iff the given testcase field is specified by the given question
+    // resultcolumns field to be displayed
+    private function show_column($field, $resultcolumns) {
+        foreach ($resultcolumns as $columnspecifier) {
+            if ($columnspecifier[1] === $field) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    // Return the column header to be used for the given testcase field,
+    // as specified by the question's resultcolumns field.
+    private function column_header($field, $resultcolumns) {
+        foreach ($resultcolumns as $columnspecifier) {
+            if ($columnspecifier[1] === $field) {
+                return $columnspecifier[0];
+            }
+        }
+        return 'ERROR';
     }
 
 

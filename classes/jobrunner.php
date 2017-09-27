@@ -123,7 +123,8 @@ class qtype_coderunner_jobrunner {
          //  $this->template = $this->question->render_using_twig_with_params($this->template, $this->templateparams);
         }
 
-        if ($question->get_is_combinator() and $this->has_no_stdins()) {
+        if ($question->get_is_combinator() and
+                ($this->has_no_stdins() || $question->allow_multiple_stdins())) {
             $outcome = $this->run_combinator($isprecheck);
         } else {
             $outcome = null;
@@ -136,7 +137,6 @@ class qtype_coderunner_jobrunner {
         // a test result for each test case.
 
         if ($outcome == null) {
-            assert (!($question->get_is_combinator() && $this->grader->name() == 'TemplateGrader'));
             $outcome = $this->run_tests_singly($isprecheck);
         }
 
@@ -182,7 +182,7 @@ class qtype_coderunner_jobrunner {
         if ($run->error !== qtype_coderunner_sandbox::OK) {
             $outcome->set_status(
                     qtype_coderunner_testing_outcome::STATUS_SANDBOX_ERROR,
-                    qtype_coderunner_sandbox::error_string($run->error));
+                    qtype_coderunner_sandbox::error_string($run));
         } else if ($this->grader->name() === 'TemplateGrader') {
             $outcome = $this->do_combinator_grading($run, $isprecheck);
         } else if ($run->result === qtype_coderunner_sandbox::RESULT_COMPILATION_ERROR) {
@@ -239,7 +239,7 @@ class qtype_coderunner_jobrunner {
             if ($run->error !== qtype_coderunner_sandbox::OK) {
                 $outcome->set_status(
                     qtype_coderunner_testing_outcome::STATUS_SANDBOX_ERROR,
-                    qtype_coderunner_sandbox::error_string($run->error));
+                    qtype_coderunner_sandbox::error_string($run));
                 break;
             } else if ($run->result === qtype_coderunner_sandbox::RESULT_COMPILATION_ERROR) {
                 $outcome->set_status(
@@ -312,7 +312,8 @@ class qtype_coderunner_jobrunner {
                     $result->feedbackhtml = $result->feedback_html; // Change to modern version.
                     unset($result->feedback_html);
                 }
-                foreach (array('prologuehtml', 'testresults', 'epiloguehtml', 'feedbackhtml') as $key) {
+                foreach (array('prologuehtml', 'testresults', 'epiloguehtml',
+                    'feedbackhtml', 'showdifferences') as $key) {
                     if (isset($result->$key)) {
                         if ($key === 'feedbackhtml' || $key === 'feedback_html') {
                             // For compatibility with older combinator graders.

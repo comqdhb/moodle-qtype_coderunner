@@ -427,7 +427,7 @@ class qtype_coderunner_renderer extends qtype_renderer {
 
 
     // Format one or more examples.
-    protected function format_examples($examples) {
+    protected function format_examples_old($examples) {
         if ($this->all_single_line($examples) && ! self::FORCE_TABULAR_EXAMPLES) {
             return $this->format_examples_one_per_line($examples);
         } else {
